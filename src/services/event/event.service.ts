@@ -4,6 +4,13 @@ export const getEvents = async () => {
   const events = await prisma.event.findMany({
     select: {
       id: true,
+      user: {
+        select: {
+          name: true,
+          username: true,
+          avatar: true,
+        }
+      },
       title: true,
       description: true,
       mediaType: true,
