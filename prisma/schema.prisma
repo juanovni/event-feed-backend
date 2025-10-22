@@ -7,10 +7,56 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum MediaType {
+  image
+  video
+}
+
+enum UserStatus {
+  attending
+  interested
+  none
+}
+
 model User {
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
+  Event     Event[]
+}
+
+model Category {
+  id    String  @id @default(uuid())
+  name  String
+  Event Event[]
+}
+
+model Event {
+  id          String     @id @default(uuid())
+  title       String
+  description String
+  mediaType   MediaType
+  mediaUrl    String
+  likes       Int
+  isLiked     Boolean
+  cost        Float
+  currency    String
+  gallery     String[]   @default([])
+  location    String
+  eventDate   DateTime
+  attendees   Int
+  interested  Int
+  userStatus  UserStatus @default(none)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //Relaciones
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId String
 }
