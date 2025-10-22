@@ -1,7 +1,7 @@
 import prisma from "../../prisma/client";
 
 export const getEvents = async () => {
-  return prisma.event.findMany({
+  const events = await prisma.event.findMany({
     select: {
       id: true,
       title: true,
@@ -28,4 +28,10 @@ export const getEvents = async () => {
       updatedAt: false
     },
   });
+
+  // "Aplanar" el objeto category
+  return events.map((event) => ({
+    ...event,
+    category: event.category?.name || null,
+  }));
 };
