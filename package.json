@@ -8,7 +8,8 @@
     "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "seed": "ts-node src/seed/seed-database.ts"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +18,7 @@
   "dependencies": {
     "@prisma/client": "^6.18.0",
     "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
     "express": "^4.21.2",
     "express-async-errors": "^3.1.1"
   },
