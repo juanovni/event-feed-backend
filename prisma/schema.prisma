@@ -25,18 +25,21 @@ enum UserStatus {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  name        String
-  username    String   @unique
-  email       String   @unique
-  password    String
-  avatar      String?
-  isFollowing Boolean  @default(false)
-  interests   String[] @default([])
+  id        String   @id @default(uuid())
+  name      String
+  username  String   @unique
+  email     String   @unique
+  password  String
+  avatar    String?
+  //isFollowing Boolean  @default(false)
+  interests String[] @default([])
 
   role      Role     @default(user)
   createdAt DateTime @default(now())
   Event     Event[]
+
+  following Follow[] @relation("FollowingRelation")
+  followers Follow[] @relation("FollowerRelation")
 }
 
 model Category {
@@ -71,4 +74,17 @@ model Event {
 
   category   Category @relation(fields: [categoryId], references: [id])
   categoryId String
+}
+
+model Follow {
+  id         String @id @default(uuid())
+  follower   User   @relation("FollowingRelation", fields: [followerId], references: [id])
+  followerId String
+
+  following   User   @relation("FollowerRelation", fields: [followingId], references: [id])
+  followingId String
+
+  createdAt DateTime @default(now())
+
+  @@unique([followerId, followingId]) // evita duplicados
 }

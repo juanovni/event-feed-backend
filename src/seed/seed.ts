@@ -6,7 +6,7 @@ interface SeedUser {
   password: string;
   username: string;
   avatar: string;
-  isFollowing?: boolean;
+  //isFollowing?: boolean;
   interests: string[];
   role: 'admin' | 'user' | 'publisher';
 }
@@ -126,7 +126,7 @@ export const initialData: SeedData = {
       password: bcryptjs.hashSync('123456'),
       username: 'juanConstantine',
       avatar: '',
-      isFollowing: false,
+      //isFollowing: false,
       interests: ['restaurant'],
       role: 'admin',
     },
@@ -136,7 +136,7 @@ export const initialData: SeedData = {
       password: bcryptjs.hashSync('123456'),
       username: 'joseMurillo',
       avatar: '',
-      isFollowing: false,
+      //isFollowing: false,
       interests: ['music'],
       role: 'user',
     },
@@ -146,7 +146,7 @@ export const initialData: SeedData = {
       password: bcryptjs.hashSync('123456'),
       username: 'solIdrovo',
       avatar: '',
-      isFollowing: false,
+      //isFollowing: false,
       interests: ['music'],
       role: 'publisher',
     }
