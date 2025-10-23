@@ -3,9 +3,10 @@ import { initialData } from './seed';
 
 async function main() {
   // 1. Borrar registros previos
-  await prisma.category.deleteMany();
-  await prisma.user.deleteMany();
+  await prisma.follow.deleteMany();
   await prisma.event.deleteMany();
+  await prisma.user.deleteMany();
+  await prisma.category.deleteMany();
 
   const { users, categories, events } = initialData;
 
@@ -30,7 +31,10 @@ async function main() {
 
     const { category, ...rest } = event;
 
-    const user = await prisma.user.findFirst({ select: { id: true } });
+    const user = await prisma.user.findFirst({
+      select: { id: true },
+      where: { username: 'nicanorec' }
+    });
     if (!user) throw new Error("No se encontró el usuario");
 
     const dbProduct = await prisma.event.create({
