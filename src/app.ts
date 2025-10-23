@@ -4,6 +4,7 @@ import "express-async-errors";
 
 import userRoutes from "./routes/user/user.routes";
 import eventRoutes from "./routes/event/event.routes";
+import followRoutes from "./routes/follow/follow.routes";
 /* import { errorHandler } from "./middlewares/errorHandler"; */
 
 const app = express();
@@ -26,7 +27,7 @@ app.get("/", (_req, res) => res.json({ ok: true, timestamp: new Date().toISOStri
 
 app.use("/api/users", userRoutes);
 app.use("/api/events", eventRoutes);
-
+app.use("/api/follow", followRoutes);
 
 /* app.use(errorHandler); */
 

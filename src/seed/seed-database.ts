@@ -31,10 +31,15 @@ async function main() {
 
     const { category, ...rest } = event;
 
+    let userName = 'nicanorec';
+    if (event.category === 'Bar') {
+      userName = 'cantobar.ec';
+    }
     const user = await prisma.user.findFirst({
       select: { id: true },
-      where: { username: 'nicanorec' }
+      where: { username: userName }
     });
+
     if (!user) throw new Error("No se encontró el usuario");
 
     const dbProduct = await prisma.event.create({
