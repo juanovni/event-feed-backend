@@ -16,8 +16,6 @@ export const getEvents = async (isFollowing?: boolean) => {
       description: true,
       mediaType: true,
       mediaUrl: true,
-      likes: true,
-      isLiked: true,
       cost: true,
       currency: true,
       gallery: true,
@@ -30,7 +28,6 @@ export const getEvents = async (isFollowing?: boolean) => {
         },
       },
       attendees: true,
-      interested: true,
       userStatus: true,
       createdAt: true,
       updatedAt: false
@@ -54,11 +51,30 @@ export const getEvents = async (isFollowing?: boolean) => {
 
   const followingIds = new Set(follows.map((f) => f.followingId));
 
+  const interests = await prisma.eventInterest.findMany({
+    where: { userId: user.id },
+    select: { eventId: true },
+  });
+  const interestedEventIds = new Set(interests.map((i) => i.eventId));
+
+  // Contar interesados por evento usando groupBy (más eficiente que un bucle)
+  const interestCounts = await prisma.eventInterest.groupBy({
+    by: ["eventId"],
+    _count: { eventId: true },
+  });
+
+  // Transformar a un Map para acceso rápido
+  const interestMap = new Map(
+    interestCounts.map((i) => [i.eventId, i._count.eventId])
+  );
+
   // 4️⃣ Agregar campo `isFollowing`
   const eventsWithFollow = events.map((event) => ({
     ...event,
     category: event.category?.name || null,
     isFollowing: followingIds.has(event.user.id),
+    isInterested: interestedEventIds.has(event.id),
+    interested: interestMap.get(event.id) || 0, // total interesados real
   }));
 
   // 5️⃣ Si se pasa `isFollowing = true`, filtrar solo esos eventos
@@ -70,5 +86,7 @@ export const getEvents = async (isFollowing?: boolean) => {
     ...event,
     category: event.category?.name || null,
     isFollowing: followingIds.has(event.user.id),
+    isInterested: interestedEventIds.has(event.id),
+    interested: interestMap.get(event.id) || 0, // total interesados real
   }));
 };

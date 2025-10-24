@@ -23,9 +23,6 @@ export const toggleFollow = async (followerId: string, followingId: string) => {
     return { isFollowing: false, message: "Dejaste de seguir a este usuario" };
   }
 
-  /*   console.log({ followerId })
-    console.log({ followingId }) */
-
   // 3️⃣ Si no existe, crear (follow)
   await prisma.follow.create({
     data: { followerId, followingId },
