@@ -3,10 +3,10 @@ import { toggleFollow } from "../../services/follow/follow.service";
 
 export const handleFollow = async (req: Request, res: Response) => {
   try {
-    const followerId = "10a72ec0-e98d-4f1f-a2a8-55a4f140f591"; // Asumiendo que lo obtienes del token JWT o sesión
+    const followerId = req.user?.id; // ✅ lo tomamos del token
     const { followingId } = req.params;
 
-    const result = await toggleFollow(followerId, followingId);
+    const result = await toggleFollow(String(followerId), followingId);
 
     return res.status(200).json(result);
   } catch (error: any) {

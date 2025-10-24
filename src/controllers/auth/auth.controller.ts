@@ -49,8 +49,8 @@ export const login = async (req: Request, res: Response) => {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(400).json({ message: "Credenciales incorrectas" });
 
-    const accessToken = generateAccessToken(+user.id);
-    const refreshToken = generateRefreshToken(+user.id);
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
 
     await prisma.user.update({
       where: { id: user.id },
@@ -58,7 +58,14 @@ export const login = async (req: Request, res: Response) => {
     });
 
     res.json({
-      user: { id: user.id, name: user.name, email: user.email },
+      user: {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        avatar: user.avatar,
+        rol: user.role,
+        email: user.email
+      },
       accessToken,
       refreshToken,
     });
@@ -81,8 +88,8 @@ export const refresh = async (req: Request, res: Response) => {
     if (!user || user.refreshToken !== refreshToken)
       return res.status(403).json({ message: "Refresh token inválido" });
 
-    const newAccessToken = generateAccessToken(+user.id);
-    const newRefreshToken = generateRefreshToken(+user.id);
+    const newAccessToken = generateAccessToken(user.id);
+    const newRefreshToken = generateRefreshToken(user.id);
 
     await prisma.user.update({
       where: { id: user.id },
