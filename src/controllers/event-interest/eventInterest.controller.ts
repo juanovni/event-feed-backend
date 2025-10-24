@@ -4,9 +4,9 @@ import * as interestService from "../../services/event-interest/eventInterest.se
 export const toggleInterestHandler = async (req: Request, res: Response) => {
   try {
     const { eventId } = req.params;
-    const userId = "10a72ec0-e98d-4f1f-a2a8-55a4f140f591" // 👈 reemplaza por JWT real
+    const userId = req.user?.id; // ✅ lo tomamos del token
 
-    const result = await interestService.toggleInterest(userId, eventId);
+    const result = await interestService.toggleInterest(String(userId), eventId);
 
     return res.json({
       message: result.interested
