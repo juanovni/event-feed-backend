@@ -1,10 +1,14 @@
 import { Request, Response } from "express";
 import * as eventService from "../../services/event/event.service";
 
-export const listEventsHandler = async (_req: Request, res: Response) => {
-  const isFollowing = _req.query.isFollowing as boolean | undefined;
+export const listEventsHandler = async (req: Request, res: Response) => {
+  const userId = req.user?.id;
 
-  const events = await eventService.getEvents(isFollowing);
+  console.log(userId)
+
+  const isFollowing = req.query.isFollowing as boolean | undefined;
+
+  const events = await eventService.getEvents(String(userId), isFollowing);
   res.json(events);
 };
 

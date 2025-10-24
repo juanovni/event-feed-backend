@@ -6,7 +6,7 @@ import { authenticate } from "../../middlewares/auth";
 
 const router = Router();
 
-router.get("/", listEventsHandler);
+router.get("/", authenticate, listEventsHandler);
 router.post("/:eventId/toggle-interest", authenticate, toggleInterestHandler);
 
 export default router;

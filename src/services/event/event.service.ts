@@ -1,6 +1,6 @@
 import prisma from "../../prisma/client";
 
-export const getEvents = async (isFollowing?: boolean) => {
+export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
   const events = await prisma.event.findMany({
     select: {
       id: true,
@@ -35,16 +35,15 @@ export const getEvents = async (isFollowing?: boolean) => {
     orderBy: { createdAt: "desc" },
   });
 
-  const user = await prisma.user.findFirst({
-    where: { username: "joseMurillo" },
+  /* const user = await prisma.user.findFirst({
+    where: { id: authUserId },
   });
-
-  if (!user) return [];
+  if (!user) return []; */
 
   // Obtenemos todos los follows del usuario logueado
   const follows = await prisma.follow.findMany({
     where: {
-      followerId: user.id,
+      followerId: authUserId,
     },
     select: { followingId: true },
   });
@@ -52,7 +51,7 @@ export const getEvents = async (isFollowing?: boolean) => {
   const followingIds = new Set(follows.map((f) => f.followingId));
 
   const interests = await prisma.eventInterest.findMany({
-    where: { userId: user.id },
+    where: { userId: authUserId },
     select: { eventId: true },
   });
   const interestedEventIds = new Set(interests.map((i) => i.eventId));
