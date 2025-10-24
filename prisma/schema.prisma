@@ -42,6 +42,7 @@ model User {
   following     Follow[]        @relation("FollowingRelation")
   followers     Follow[]        @relation("FollowerRelation")
   EventInterest EventInterest[]
+  Ticket        Ticket[]
 }
 
 model Category {
@@ -74,6 +75,7 @@ model Event {
   category      Category        @relation(fields: [categoryId], references: [id])
   categoryId    String
   EventInterest EventInterest[]
+  TicketItem    TicketItem[]
 }
 
 model Follow {
@@ -98,4 +100,36 @@ model EventInterest {
   createdAt DateTime @default(now())
 
   @@unique([userId, eventId]) // 👈 evita duplicados
+}
+
+model Ticket {
+  id           String    @id @default(uuid())
+  subTotal     Float
+  tax          Float
+  total        Float
+  itemsInOrder Int
+  isPaid       Boolean   @default(false)
+  paidAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //Relaciones
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  transactionId String?
+  TicketItem    TicketItem[]
+}
+
+model TicketItem {
+  id       String @id @default(uuid())
+  quantity Int
+  price    Float
+
+  ticket   Ticket @relation(fields: [ticketId], references: [id])
+  ticketId String
+
+  event   Event  @relation(fields: [eventId], references: [id])
+  eventId String
 }
