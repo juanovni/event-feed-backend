@@ -135,11 +135,11 @@ model TicketItem {
 }
 
 model Notification {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   title     String
   message   String
   type      String   @default("info") // info | warning | error | success
-  userId    Int
+  userId    String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

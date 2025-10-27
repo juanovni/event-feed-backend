@@ -14,19 +14,19 @@ export const NotificationController = {
   },
 
   async getByUser(req: Request, res: Response) {
-    const userId = parseInt(req.params.userId);
+    const userId = req.params.userId;
     const notifications = await NotificationService.findByUser(userId);
     res.json(notifications);
   },
 
   async markAsRead(req: Request, res: Response) {
-    const id = parseInt(req.params.id);
+    const id = req.params.id;
     const notification = await NotificationService.markAsRead(id);
     res.json(notification);
   },
 
   async delete(req: Request, res: Response) {
-    const id = parseInt(req.params.id);
+    const id = req.params.id;
     await NotificationService.delete(id);
     res.status(204).send();
   },
