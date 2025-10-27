@@ -133,3 +133,14 @@ model TicketItem {
   event   Event  @relation(fields: [eventId], references: [id])
   eventId String
 }
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  type      String   @default("info") // info | warning | error | success
+  userId    Int
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
