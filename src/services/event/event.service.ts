@@ -1,4 +1,5 @@
 import prisma from "../../prisma/client";
+import { CreateEventInput } from "../../dtos/event/create-event.dto";
 
 export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
   const events = await prisma.event.findMany({
@@ -88,4 +89,42 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
     isInterested: interestedEventIds.has(event.id),
     interested: interestMap.get(event.id) || 0, // total interesados real
   }));
+};
+
+export const createEvent = async (userId: string, data: CreateEventInput) => {
+  const {
+    title,
+    description,
+    mediaType,
+    mediaUrl,
+    cost,
+    currency,
+    gallery,
+    location,
+    eventDate,
+    attendees,
+    userStatus,
+    categoryId
+  } = data;
+
+  const event = await prisma.event.create({
+    data: {
+      title,
+      description,
+      mediaType,
+      mediaUrl,
+      cost: +cost,
+      currency,
+      gallery,
+      location,
+      eventDate: new Date(eventDate),
+      userId,
+      attendees: +attendees,
+      userStatus,
+      categoryId
+    },
+  });
+
+  return event;
+
 };

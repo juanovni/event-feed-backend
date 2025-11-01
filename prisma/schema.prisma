@@ -58,7 +58,7 @@ model Event {
   mediaType   MediaType
   mediaUrl    String
   cost        Float
-  currency    String
+  currency    String     @default("USA")
   gallery     String[]   @default([])
   location    String
   eventDate   DateTime
