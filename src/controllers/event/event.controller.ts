@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import * as eventService from "../../services/event/event.service";
 import { CreateEventDto } from "../../dtos/event/create-event.dto";
+import { NotificationService } from "../../services/notification/notification.service";
 
 export const getAllEvent = async (req: Request, res: Response) => {
   const userId = req.user?.id;
@@ -26,6 +27,14 @@ export const createEvent = async (req: Request, res: Response) => {
     }
 
     const event = await eventService.createEvent(String(userId), eventParsed.data);
+
+    await NotificationService.create({
+      title: "Nuevo evento",
+      message: `${event.title} fue creado recientemente`,
+      userId: "36901bb8-d078-4356-9e8f-253cb4a8de49",
+      type: "success",
+    });
+
     res.status(201).json(event);
   } catch (error: any) {
     console.error("Error al crear el evento:", error);
