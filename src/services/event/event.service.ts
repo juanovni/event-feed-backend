@@ -28,6 +28,12 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
           name: true,
         },
       },
+      EventImage: {
+        select: {
+          id: true,
+          url: true,
+        },
+      },
       attendees: true,
       userStatus: true,
       createdAt: true,
@@ -71,6 +77,7 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
   // 4️⃣ Agregar campo `isFollowing`
   const eventsWithFollow = events.map((event) => ({
     ...event,
+    mediaUrl: event.EventImage[0]?.url || event.mediaUrl,
     category: event.category?.name || null,
     isFollowing: followingIds.has(event.user.id),
     isInterested: interestedEventIds.has(event.id),
@@ -84,6 +91,7 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
 
   return events.map((event) => ({
     ...event,
+    mediaUrl: event.EventImage[0]?.url || event.mediaUrl,
     category: event.category?.name || null,
     isFollowing: followingIds.has(event.user.id),
     isInterested: interestedEventIds.has(event.id),

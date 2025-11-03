@@ -76,6 +76,15 @@ model Event {
   categoryId    String
   EventInterest EventInterest[]
   TicketItem    TicketItem[]
+  EventImage    EventImage[]
+}
+
+model EventImage {
+  id  Int    @id @default(autoincrement())
+  url String
+
+  event   Event  @relation(fields: [eventId], references: [id])
+  eventId String
 }
 
 model Follow {

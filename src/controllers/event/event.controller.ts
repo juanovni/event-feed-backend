@@ -2,6 +2,9 @@ import { Request, Response } from "express";
 import * as eventService from "../../services/event/event.service";
 import { CreateEventDto } from "../../dtos/event/create-event.dto";
 import { NotificationService } from "../../services/notification/notification.service";
+import { v2 as cloudinary } from 'cloudinary';
+import prisma from "../../prisma/client";
+cloudinary.config(process.env.CLOUDINARY_URL ?? '');
 
 export const getAllEvent = async (req: Request, res: Response) => {
   const userId = req.user?.id;
@@ -19,14 +22,41 @@ export const createEvent = async (req: Request, res: Response) => {
     if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
 
     const eventParsed = CreateEventDto.safeParse(req.body);
-    console.log(eventParsed);
 
     if (!eventParsed.success) {
       console.log(eventParsed.error);
-      return { ok: false }
+      return res.status(400).json({ message: "Datos inválidos", error: eventParsed.error });
     }
 
+    // 📸 Subir archivo a Cloudinary (si existe)
+    let uploadedUrl: string | null = null;
+
+    if (req.file) {
+      uploadedUrl = await new Promise<string | null>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: "events" },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result?.secure_url ?? null);
+          }
+        );
+
+        uploadStream.end(req.file!.buffer);
+      });
+    }
+
+
     const event = await eventService.createEvent(String(userId), eventParsed.data);
+
+    // 🖼️ Guardar imagen en tabla EventImage
+    if (uploadedUrl) {
+      await prisma.eventImage.create({
+        data: {
+          url: uploadedUrl,
+          eventId: event.id,
+        },
+      });
+    }
 
     await NotificationService.create({
       title: "Nuevo evento",

@@ -10,7 +10,10 @@ export const CreateEventDto = z.object({
   mediaType: MediaTypeEnum,
   mediaUrl: z.string().url("Debe ser una URL válida"),
   //cost: z.number().nonnegative("El costo no puede ser negativo"),
-  cost: z.string(),
+  cost: z.coerce
+    .number()
+    .min(0)
+    .transform(val => Number(val.toFixed(2))),
   currency: z.string().default("USA"),
   gallery: z.array(z.string().url()).default([]),
   location: z.string().min(1, "La ubicación es obligatoria"),
