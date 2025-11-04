@@ -3,6 +3,7 @@ import { initialData } from './seed';
 
 async function main() {
   // 1. Borrar registros 
+  await prisma.eventImage.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.eventInterest.deleteMany();
   await prisma.follow.deleteMany();
@@ -44,13 +45,13 @@ async function main() {
 
     if (!user) throw new Error("No se encontró el usuario");
 
-    const dbProduct = await prisma.event.create({
+    /* const dbProduct = await prisma.event.create({
       data: {
         ...rest,
         userId: user?.id,
         categoryId: categoriesMap[category]
       }
-    })
+    }) */
   });
 
   console.log('Seed ejecutado correctamente');

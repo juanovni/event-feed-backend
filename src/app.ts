@@ -7,6 +7,8 @@ import eventRoutes from "./routes/event/event.routes";
 import followRoutes from "./routes/follow/follow.routes";
 import authRoutes from "./routes/auth/auth.routes";
 import notificationRoutes from "./routes/notification/notification.routes";
+import categoryRoutes from "./routes/category/category.routes";
+
 /* import { errorHandler } from "./middlewares/errorHandler"; */
 
 const app = express();
@@ -32,6 +34,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/follow", followRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/categories", categoryRoutes);
 
 
 /* import { Router } from "express";
