@@ -3,7 +3,7 @@ import { toggleFollow } from "../../services/follow/follow.service";
 
 export const handleFollow = async (req: Request, res: Response) => {
   try {
-    const followerId = req.user?.id; // ✅ lo tomamos del token
+    const followerId = req.user?.id;
     const { followingId } = req.params;
 
     const result = await toggleFollow(String(followerId), followingId);
