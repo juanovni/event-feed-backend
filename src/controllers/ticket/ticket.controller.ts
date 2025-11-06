@@ -17,8 +17,8 @@ export class TicketController {
 
   async getByUser(req: Request, res: Response) {
     try {
-      const { userId } = req.params;
-      const tickets = await ticketService.getTicketsByUser(userId);
+      const userId = req.user?.id;
+      const tickets = await ticketService.getTicketsByUser(String(userId));
       return res.json(tickets);
     } catch (error: any) {
       return res.status(400).json({ message: error.message });

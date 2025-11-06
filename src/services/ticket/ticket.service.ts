@@ -67,7 +67,11 @@ export class TicketService {
       },
     });
 
-    return ticket;
+    return {
+      ok: true,
+      ticket: ticket,
+    }
+
   }
 
   async getTicketsByUser(userId: string) {
