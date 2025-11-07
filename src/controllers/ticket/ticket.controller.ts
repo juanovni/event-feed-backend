@@ -25,6 +25,17 @@ export class TicketController {
     }
   }
 
+  async getById(req: Request, res: Response) {
+    try {
+      const userId = req.user?.id;
+      const { ticketId } = req.params;
+      const ticket = await ticketService.getTicketById(String(userId), String(ticketId));
+      return res.json(ticket);
+    } catch (error: any) {
+      return res.status(400).json({ message: error.message });
+    }
+  }
+
   async markAsPaid(req: Request, res: Response) {
     try {
       const { ticketId } = req.params;

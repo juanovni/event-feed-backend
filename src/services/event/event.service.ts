@@ -42,11 +42,6 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
     orderBy: { createdAt: "desc" },
   });
 
-  /* const user = await prisma.user.findFirst({
-    where: { id: authUserId },
-  });
-  if (!user) return []; */
-
   // Obtenemos todos los follows del usuario logueado
   const follows = await prisma.follow.findMany({
     where: {

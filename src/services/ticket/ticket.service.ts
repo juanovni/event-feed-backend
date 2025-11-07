@@ -75,15 +75,135 @@ export class TicketService {
   }
 
   async getTicketsByUser(userId: string) {
-    return await prisma.ticket.findMany({
+    const tickets = await prisma.ticket.findMany({
       where: { userId },
-      include: {
+      select: {
+        id: true,
+        subTotal: true,
+        tax: true,
+        total: true,
+        isPaid: true,
+        paidAt: true,
+        createdAt: true,
         TicketItem: {
-          include: { event: true },
+          select: {
+            id: true,
+            event: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                location: true,
+                mediaUrl: true,
+                currency: true,
+                eventDate: true,
+                EventImage: {
+                  select: {
+                    id: true,
+                    url: true,
+                  },
+                },
+              },
+            },
+          },
         },
       },
       orderBy: { createdAt: "desc" },
     });
+
+    return tickets.map((ticket) => {
+      const event = ticket.TicketItem[0]?.event;
+      const mediaUrl = event?.EventImage?.[0]?.url || event?.mediaUrl || null;
+
+      const eventTitle = event?.title?.replace(/\s+/g, "").toUpperCase() || "EVENTO";
+      const ticketNumber = `TCK-${ticket.id.split("-")[0].toUpperCase()}-${eventTitle}-${new Date(ticket.createdAt).getFullYear()}`;
+
+      return {
+        id: ticket.id,
+        ticketNumber,
+        subTotal: ticket.subTotal,
+        tax: ticket.tax,
+        total: ticket.total,
+        itemsInOrder: ticket.TicketItem.length,
+        isPaid: ticket.isPaid,
+        paidAt: ticket.paidAt,
+        createdAt: ticket.createdAt,
+        event: event
+          ? {
+            id: event.id,
+            title: event.title,
+            description: event.description,
+            location: event.location,
+            currency: event.currency,
+            eventDate: event.eventDate,
+            mediaUrl,
+          }
+          : null,
+      };
+    });
+
+  }
+
+  async getTicketById(userId: string, ticketId: string) {
+    const ticket = await prisma.ticket.findUnique({
+      where: { userId, id: ticketId },
+      select: {
+        id: true,
+        subTotal: true,
+        tax: true,
+        total: true,
+        paidAt: true,
+        createdAt: true,
+        isPaid: true,
+        TicketItem: {
+          select: {
+            event: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+                location: true,
+                currency: true,
+                eventDate: true,
+                mediaUrl: true,
+                EventImage: {
+                  select: { url: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!ticket) throw new Error("Ticket no encontrado");
+
+    const event = ticket.TicketItem[0]?.event;
+    const mediaUrl = event?.EventImage?.[0]?.url || event?.mediaUrl || null;
+    const ticketNumber = `TCK-${ticket.id.split("-")[0].toUpperCase()}-${event?.title?.replace(/\s+/g, "").toUpperCase()}-${new Date(ticket.createdAt).getFullYear()}`;
+
+    return {
+      id: ticket.id,
+      ticketNumber,
+      subTotal: ticket.subTotal,
+      tax: ticket.tax,
+      total: ticket.total,
+      itemsInOrder: ticket.TicketItem.length,
+      isPaid: ticket.isPaid ?? false,
+      paidAt: ticket.paidAt,
+      createdAt: ticket.createdAt,
+      event: event
+        ? {
+          id: event.id,
+          title: event.title,
+          description: event.description,
+          location: event.location,
+          currency: event.currency,
+          eventDate: event.eventDate,
+          mediaUrl,
+        }
+        : null,
+    };
   }
 
   async markAsPaid(ticketId: string, transactionId: string) {
