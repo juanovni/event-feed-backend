@@ -7,6 +7,7 @@ async function main() {
   await prisma.ticket.deleteMany();
   await prisma.eventImage.deleteMany();
   await prisma.notification.deleteMany();
+  await prisma.eventAttendance.deleteMany();
   await prisma.eventInterest.deleteMany();
   await prisma.follow.deleteMany();
   await prisma.event.deleteMany();

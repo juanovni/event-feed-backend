@@ -11,7 +11,7 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
           name: true,
           username: true,
           avatar: true,
-        }
+        },
       },
       title: true,
       description: true,
@@ -34,42 +34,37 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
           url: true,
         },
       },
-      attendees: true,
+      //attendees: true,
       userStatus: true,
       createdAt: true,
-      updatedAt: false
     },
     orderBy: { createdAt: "desc" },
   });
 
-  // Obtenemos todos los follows del usuario logueado
+  // Seguimientos del usuario
   const follows = await prisma.follow.findMany({
-    where: {
-      followerId: authUserId,
-    },
+    where: { followerId: authUserId },
     select: { followingId: true },
   });
+  const followingIds = new Set(follows.map(f => f.followingId));
 
-  const followingIds = new Set(follows.map((f) => f.followingId));
-
+  // Intereses del usuario
   const interests = await prisma.eventInterest.findMany({
     where: { userId: authUserId },
     select: { eventId: true },
   });
-  const interestedEventIds = new Set(interests.map((i) => i.eventId));
+  const interestedEventIds = new Set(interests.map(i => i.eventId));
 
-  // Contar interesados por evento usando groupBy (más eficiente que un bucle)
+  // Conteo de interesados
   const interestCounts = await prisma.eventInterest.groupBy({
     by: ["eventId"],
     _count: { eventId: true },
   });
-
-  // Transformar a un Map para acceso rápido
   const interestMap = new Map(
-    interestCounts.map((i) => [i.eventId, i._count.eventId])
+    interestCounts.map(i => [i.eventId, i._count.eventId])
   );
 
-  // 🔥 Obtener eventos pagados por el usuario
+  // Eventos pagados
   const paidTickets = await prisma.ticketItem.findMany({
     where: {
       ticket: {
@@ -79,34 +74,43 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
     },
     select: { eventId: true },
   });
-
   const paidEventIds = new Set(paidTickets.map(t => t.eventId));
 
-  // Agregar campo `isFollowing`
-  const eventsWithFollow = events.map((event) => ({
+  // Asistencias a eventos gratuitos
+  const attendances = await prisma.eventAttendance.findMany({
+    where: { userId: authUserId },
+    select: { eventId: true },
+  });
+  const attendingEventIds = new Set(attendances.map(a => a.eventId));
+
+  const attendancesCounts = await prisma.eventAttendance.groupBy({
+    by: ["eventId"],
+    _count: { eventId: true },
+  });
+  const attendMap = new Map(
+    attendancesCounts.map(i => [i.eventId, i._count.eventId])
+  );
+
+  // Eventos
+  const eventsWithUserData = events.map(event => ({
     ...event,
     mediaUrl: event.EventImage[0]?.url || event.mediaUrl,
     category: event.category?.name || null,
     isFollowing: followingIds.has(event.user.id),
     isInterested: interestedEventIds.has(event.id),
     interested: interestMap.get(event.id) || 0,
+    //isAttending: event.cost === 0 && attendingEventIds.has(event.id),
+    isAttending: attendingEventIds.has(event.id),
+    attendees: attendMap.get(event.id) || 0,
     hasPaid: paidEventIds.has(event.id),
   }));
 
-  // Si se pasa `isFollowing = true`, filtrar solo esos eventos
+  // 🧭 Filtrado opcional
   if (isFollowing) {
-    return eventsWithFollow.filter((event) => event.isFollowing);
+    return eventsWithUserData.filter(event => event.isFollowing);
   }
 
-  return events.map((event) => ({
-    ...event,
-    mediaUrl: event.EventImage[0]?.url || event.mediaUrl,
-    category: event.category?.name || null,
-    isFollowing: followingIds.has(event.user.id),
-    isInterested: interestedEventIds.has(event.id),
-    interested: interestMap.get(event.id) || 0,
-    hasPaid: paidEventIds.has(event.id),
-  }));
+  return eventsWithUserData;
 };
 
 export const createEvent = async (userId: string, data: CreateEventInput) => {
