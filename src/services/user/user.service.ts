@@ -24,6 +24,7 @@ export const getUserSuggestionsService = async (userId: string) => {
       name: true,
       username: true,
       avatar: true,
+      role: true,
       followers: {
         where: { followerId: userId },
         select: { id: true },
@@ -41,6 +42,7 @@ export const getUserSuggestionsService = async (userId: string) => {
     id: user.id,
     name: user.name,
     username: user.username,
+    rol: user.role,
     avatar: user.avatar,
     isFollowing: user.followers.length > 0,
     followsYou: user.following.length > 0,
