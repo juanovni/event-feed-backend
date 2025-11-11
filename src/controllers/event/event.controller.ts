@@ -24,7 +24,6 @@ export const createEvent = async (req: Request, res: Response) => {
     const eventParsed = CreateEventDto.safeParse(req.body);
 
     if (!eventParsed.success) {
-      console.log(eventParsed.error);
       return res.status(400).json({ message: "Datos inválidos", error: eventParsed.error });
     }
 
@@ -69,5 +68,21 @@ export const createEvent = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error("Error al crear el evento:", error);
     res.status(400).json({ message: "Error interno del servidor" });
+  }
+};
+
+export const getConfirmedFriends = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
+
+    const { eventId } = req.params;
+
+    const friends = await eventService.getConfirmedFriends(String(userId), eventId);
+
+    return res.status(200).json(friends);
+  } catch (error: any) {
+    console.error(error);
+    return res.status(500).json({ message: "Error al obtener amigos confirmados" });
   }
 };

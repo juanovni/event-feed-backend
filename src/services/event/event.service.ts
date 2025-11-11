@@ -150,3 +150,34 @@ export const createEvent = async (userId: string, data: CreateEventInput) => {
   return event;
 
 };
+
+export const getConfirmedFriends = async (userId: string, eventId: string) => {
+  try {
+    const confirmedFriends = await prisma.user.findMany({
+      where: {
+        // los que sigues
+        followers: {
+          some: {
+            followerId: userId,
+          },
+        },
+        // que asistieron al evento
+        EventAttendance: {
+          some: {
+            eventId,
+          },
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+      },
+    });
+
+    return confirmedFriends;
+  } catch (error) {
+    console.error("Error en getConfirmedFriendsService:", error);
+    throw new Error("Error al obtener amigos confirmados");
+  }
+};
