@@ -46,7 +46,7 @@ async function main() {
       where: { username: userName }
     });
 
-    if (!user) throw new Error("No se encontró el usuario");
+    // if (!user) throw new Error("No se encontró el usuario");
 
     /* const dbProduct = await prisma.event.create({
       data: {
