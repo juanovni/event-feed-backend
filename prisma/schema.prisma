@@ -24,6 +24,17 @@ enum UserStatus {
   none
 }
 
+enum ImageType {
+  event
+  gallery
+}
+
+enum ImageStatus {
+  pending
+  approved
+  rejected
+}
+
 model User {
   id           String   @id @default(uuid())
   name         String
@@ -82,8 +93,10 @@ model Event {
 }
 
 model EventImage {
-  id  Int    @id @default(autoincrement())
-  url String
+  id     Int         @id @default(autoincrement())
+  url    String
+  type   ImageType   @default(event)
+  status ImageStatus @default(pending)
 
   event   Event  @relation(fields: [eventId], references: [id])
   eventId String

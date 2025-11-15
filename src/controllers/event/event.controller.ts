@@ -53,6 +53,8 @@ export const createEvent = async (req: Request, res: Response) => {
         data: {
           url: uploadedUrl,
           eventId: event.id,
+          type: 'event',
+          status: 'approved'
         },
       });
     }
@@ -60,7 +62,7 @@ export const createEvent = async (req: Request, res: Response) => {
     await NotificationService.create({
       title: "Nuevo evento",
       message: `${event.title} fue creado recientemente`,
-      userId: "36901bb8-d078-4356-9e8f-253cb4a8de49",
+      userId: String(userId),
       type: "success",
     });
 
@@ -81,6 +83,44 @@ export const getConfirmedFriends = async (req: Request, res: Response) => {
     const friends = await eventService.getConfirmedFriends(String(userId), eventId);
 
     return res.status(200).json(friends);
+  } catch (error: any) {
+    console.error(error);
+    return res.status(500).json({ message: "Error al obtener amigos confirmados" });
+  }
+};
+
+export const uploadEventImageController = async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
+
+    const { eventId } = req.params;
+
+    // 1. Subir a Cloudinary
+    let imageUrl: string | null = null;
+    if (req.file) {
+      imageUrl = await new Promise<string | null>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: "gallery" },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result?.secure_url ?? null);
+          }
+        );
+
+        uploadStream.end(req.file!.buffer);
+      });
+    }
+
+    // 2. Registrar imagen en DB
+    if (imageUrl) {
+      const image = await eventService.uploadEventImage(String(userId), eventId, imageUrl);
+      return res.status(201).json(image);
+    }
+
+    return res.status(400).json({ message: "No puedes subir fotos" });
+
+
   } catch (error: any) {
     console.error(error);
     return res.status(500).json({ message: "Error al obtener amigos confirmados" });

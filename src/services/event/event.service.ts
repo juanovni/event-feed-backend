@@ -29,6 +29,9 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
         },
       },
       EventImage: {
+        where: {
+          type: 'event'
+        },
         select: {
           id: true,
           url: true,
@@ -180,4 +183,77 @@ export const getConfirmedFriends = async (userId: string, eventId: string) => {
     console.error("Error en getConfirmedFriendsService:", error);
     throw new Error("Error al obtener amigos confirmados");
   }
+};
+
+export const uploadEventImage = async (
+  userId: string,
+  eventId: string,
+  imageUrl: string
+) => {
+  // 1. Validar que el usuario exista y sea publisher
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  console.log(user);
+  if (!user) throw new Error("Usuario no encontrado");
+  /*  if (user.role !== "publisher") {
+     throw new Error("Solo los Publishers pueden subir imágenes");
+   } */
+
+  // 2. Validar que el evento exista
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { id: true },
+  });
+
+  if (!event) {
+    throw new Error("El evento no existe");
+  }
+
+  // 3. Validar asistencia del usuario
+  const attendance = await prisma.eventAttendance.findUnique({
+    where: {
+      userId_eventId: {
+        userId,
+        eventId,
+      },
+    },
+  });
+
+  // 4. Validar si ha pagado el evento
+  const paidTicket = await prisma.ticketItem.findFirst({
+    where: {
+      eventId,
+      ticket: {
+        userId,
+        isPaid: true,
+      },
+    },
+  });
+
+  if (!attendance && !paidTicket) {
+    throw new Error(
+      "No puedes subir fotos. Debes haber confirmado tu asistencia o haber pagado el evento."
+    );
+  }
+
+  // 5. Crear imagen con estado pending
+  const newImage = await prisma.eventImage.create({
+    data: {
+      url: imageUrl,
+      status: "pending",
+      type: "gallery",
+      eventId,
+    },
+    select: {
+      id: true,
+      url: true,
+      type: true,
+      status: true,
+      eventId: true,
+    },
+  });
+
+  return newImage;
 };
