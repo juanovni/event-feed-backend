@@ -126,3 +126,18 @@ export const uploadEventImageController = async (req: Request, res: Response) =>
     return res.status(500).json({ message: "Error al obtener amigos confirmados" });
   }
 };
+
+
+export const getEventImagesController = async (req: Request, res: Response) => {
+  try {
+    const { eventId } = req.params;
+
+    const images = await eventService.getEventImages(eventId);
+
+    return res.status(200).json(images);
+  } catch (err: any) {
+    return res.status(400).json({
+      message: err.message || "Error al obtener las imágenes del evento",
+    });
+  }
+};

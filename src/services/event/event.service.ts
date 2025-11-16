@@ -257,3 +257,34 @@ export const uploadEventImage = async (
 
   return newImage;
 };
+
+export const getEventImages = async (eventId: string) => {
+  // Validar si el evento existe
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { id: true },
+  });
+
+  if (!event) {
+    throw new Error("El evento no existe");
+  }
+
+  // Obtener imágenes aprobadas
+  const images = await prisma.eventImage.findMany({
+    where: {
+      eventId,
+      status: "approved", // solo imágenes aprobadas
+      type: "gallery",
+    },
+    select: {
+      id: true,
+      url: true,
+      status: true,
+    },
+    orderBy: {
+      id: "desc",
+    },
+  });
+
+  return images;
+};

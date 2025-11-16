@@ -1,8 +1,17 @@
 import { Router } from "express";
 import multer from "multer";
 import { toggleInterestHandler } from "../../controllers/event-interest/eventInterest.controller";
-import { createEvent, getAllEvent, getConfirmedFriends, uploadEventImageController } from "../../controllers/event/event.controller";
-import { createAttendance, listAttendances } from "../../controllers/event-attendance/eventAttendance.controller";
+import {
+  createEvent,
+  getAllEvent,
+  getConfirmedFriends,
+  getEventImagesController,
+  uploadEventImageController
+} from "../../controllers/event/event.controller";
+import {
+  createAttendance,
+  listAttendances
+} from "../../controllers/event-attendance/eventAttendance.controller";
 
 import { authenticate } from "../../middlewares/auth";
 
@@ -21,5 +30,7 @@ router.get("/:eventId/attendees", listAttendances);
 router.get("/:eventId/confirmed-friends", authenticate, getConfirmedFriends);
 
 router.post("/:eventId/upload-image", authenticate, upload.single("mediaFile"), uploadEventImageController);
+
+router.get("/:eventId/images", getEventImagesController);
 
 export default router;
