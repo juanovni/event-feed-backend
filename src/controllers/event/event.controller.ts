@@ -53,6 +53,7 @@ export const createEvent = async (req: Request, res: Response) => {
         data: {
           url: uploadedUrl,
           eventId: event.id,
+          userId: String(userId),
           type: 'event',
           status: 'approved'
         },
@@ -115,6 +116,14 @@ export const uploadEventImageController = async (req: Request, res: Response) =>
     // 2. Registrar imagen en DB
     if (imageUrl) {
       const image = await eventService.uploadEventImage(String(userId), eventId, imageUrl);
+
+      await NotificationService.create({
+        title: "Nuevo evento",
+        message: `Solicitud de foto en tu album ${eventId}`,
+        userId: String(userId),
+        type: "success",
+      });
+
       return res.status(201).json(image);
     }
 
