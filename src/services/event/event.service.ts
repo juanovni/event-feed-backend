@@ -37,6 +37,15 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
           url: true,
         },
       },
+      eventTicketTypes: {
+        select: {
+          id: true,
+          name: true,
+          price: true,
+          quantity: true,
+          validUntil: true,
+        }
+      },
       //attendees: true,
       userStatus: true,
       createdAt: true,
@@ -129,7 +138,8 @@ export const createEvent = async (userId: string, data: CreateEventInput) => {
     eventDate,
     attendees,
     userStatus,
-    categoryId
+    categoryId,
+    eventTicketTypes = []
   } = data;
 
   const event = await prisma.event.create({
@@ -146,8 +156,19 @@ export const createEvent = async (userId: string, data: CreateEventInput) => {
       userId,
       attendees: +attendees,
       userStatus,
-      categoryId
+      categoryId,
+      eventTicketTypes: {
+        create: eventTicketTypes.map(t => ({
+          name: t.name,
+          price: +t.price,
+          quantity: +t.quantity,
+          validUntil: t.validUntil ? new Date(t.validUntil) : null,
+        }))
+      }
     },
+    include: {
+      eventTicketTypes: true
+    }
   });
 
   return event;

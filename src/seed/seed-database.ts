@@ -3,8 +3,10 @@ import { initialData } from './seed';
 
 async function main() {
   // 1. Borrar registros 
+  await prisma.eventTicketType.deleteMany();
   await prisma.ticketItem.deleteMany();
   await prisma.ticket.deleteMany();
+  await prisma.eventTicketType.deleteMany();
   await prisma.eventImage.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.eventAttendance.deleteMany();

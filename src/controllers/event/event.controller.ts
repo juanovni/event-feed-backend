@@ -21,6 +21,17 @@ export const createEvent = async (req: Request, res: Response) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
 
+    if (typeof req.body.eventTicketTypes === "string") {
+      try {
+        req.body.eventTicketTypes = JSON.parse(req.body.eventTicketTypes);
+      } catch (e) {
+        return res.status(400).json({
+          message: "eventTicketTypes debe ser un arreglo válido"
+        });
+      }
+    }
+
+
     const eventParsed = CreateEventDto.safeParse(req.body);
 
     if (!eventParsed.success) {
@@ -43,7 +54,6 @@ export const createEvent = async (req: Request, res: Response) => {
         uploadStream.end(req.file!.buffer);
       });
     }
-
 
     const event = await eventService.createEvent(String(userId), eventParsed.data);
 
