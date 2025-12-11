@@ -1,7 +1,8 @@
 export interface CreateTicketItemDto {
   eventId: string;
+  ticketTypeId: string;   // ID del EventTicketType
   quantity: number;
-  price: number;
+  eventTicketTypeId: string;
 }
 
 export interface CreateTicketDto {

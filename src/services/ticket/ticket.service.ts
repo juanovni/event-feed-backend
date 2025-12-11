@@ -6,20 +6,37 @@ export class TicketService {
 
   async createTicket(userId: string, data: CreateTicketDto) {
     const { items } = data;
+
     if (!items?.length) {
       throw new Error("Debe incluir al menos un item para crear un ticket.");
     }
 
-    // Obtener info de eventos
-    const events = await prisma.event.findMany({
-      where: { id: { in: items.map((e) => e.eventId) } },
+    // 1. Obtener todos los ticket types enviados
+    const ticketTypes = await prisma.eventTicketType.findMany({
+      where: {
+        id: { in: items.map(i => i.eventTicketTypeId) }
+      },
+      include: { event: true },
     });
 
-    // Calcular totales
-    const { subTotal, tax, total } = this.calculateTotals(items, events);
+    if (ticketTypes.length !== items.length) {
+      throw new Error("Uno o más tipos de ticket no existen.");
+    }
+
+    // 2. Calcular totales usando precios del backend
+    let subTotal = 0;
+    console.log(ticketTypes)
+    for (const item of items) {
+      const type = ticketTypes.find(t => t.id === item.eventTicketTypeId);
+      subTotal += type?.price || 0 * item.quantity;
+    }
+
+    const tax = subTotal * 0.15; // ejemplo
+    const total = subTotal + tax;
+
     const itemsInOrder = items.reduce((acc, i) => acc + i.quantity, 0);
 
-    // Crear ticket con sus ítems
+    // 3. Crear el Ticket + TicketItems
     const ticket = await prisma.ticket.create({
       data: {
         userId,
@@ -28,22 +45,31 @@ export class TicketService {
         total,
         itemsInOrder,
         isPaid: false,
+
         TicketItem: {
           createMany: {
-            data: items.map((item) => ({
-              eventId: item.eventId,
-              quantity: item.quantity,
-              price: events.find((e) => e.id === item.eventId)?.cost ?? 0,
-            })),
+            data: items.map(item => {
+              const type = ticketTypes.find(t => t.id === item.eventTicketTypeId);
+
+              return {
+                eventId: item.eventId, // lo puedes tomar del frontend o del tipo
+                quantity: item.quantity,
+                price: type?.price || 0, // SIEMPRE usar el precio del backend
+              };
+            }),
           },
         },
       },
-      include: { TicketItem: { include: { event: true } } },
+      include: {
+        TicketItem: {
+          include: { event: true }
+        }
+      }
     });
 
     return {
       ok: true,
-      ticket: this.mapTicketToResponse(ticket),
+      ticket,
     };
   }
 
