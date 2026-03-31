@@ -24,7 +24,7 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
       eventDate: true,
       category: {
         select: {
-          id: false,
+          id: true,
           name: true,
         },
       },
@@ -107,7 +107,7 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
   const eventsWithUserData = events.map(event => ({
     ...event,
     mediaUrl: event.EventImage[0]?.url || event.mediaUrl,
-    category: event.category?.name || null,
+    category: event.category,
     isFollowing: followingIds.has(event.user.id),
     isInterested: interestedEventIds.has(event.id),
     interested: interestMap.get(event.id) || 0,
@@ -117,12 +117,64 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
     hasPaid: paidEventIds.has(event.id),
   }));
 
-  // 🧭 Filtrado opcional
+  // 🔥 Obtener categorías del usuario
+  const userCategories = await prisma.user.findUnique({
+    where: { id: authUserId },
+    select: {
+      categories: {
+        select: { id: true },
+      },
+    },
+  });
+
+  const userCategoryIds = userCategories?.categories.map(c => c.id) || [];
+
+  // 🔥 Ranking
+  const rankedEvents = eventsWithUserData.map(event => {
+    let score = 0;
+
+    // Categoría
+    if (event.category && userCategoryIds.includes(event.category.id)) {
+      score += 50;
+    }
+
+    // Following
+    if (event.isFollowing) score += 30;
+
+    // Popularidad
+    score += event.interested * 2;
+    score += event.attendees * 3;
+
+    // Tiempo
+    const now = new Date();
+    const eventDate = new Date(event.eventDate);
+    const diffDays =
+      (eventDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (diffDays >= 0 && diffDays <= 7) score += 40;
+    else if (diffDays <= 30) score += 20;
+
+    // Penalización
+    if (event.isAttending || event.hasPaid) score -= 100;
+
+    return {
+      ...event,
+      category: event.category.name,
+      score,
+    };
+  });
+
+  // 🔥 Orden final
+  rankedEvents.sort((a, b) => b.score - a.score);
+
+  // 🔥 Filtro opcional
   if (isFollowing) {
-    return eventsWithUserData.filter(event => event.isFollowing);
+    return rankedEvents.filter(event => event.isFollowing);
   }
 
-  return eventsWithUserData;
+  return rankedEvents;
+
+
 };
 
 export const createEvent = async (userId: string, data: CreateEventInput) => {
