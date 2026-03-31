@@ -36,15 +36,18 @@ enum ImageStatus {
 }
 
 model User {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   name         String
-  username     String   @unique
+  lastName     String?
+  birthdate    DateTime?
+  gender       String?
+  username     String    @unique
   description  String?
-  email        String   @unique
+  email        String    @unique
   password     String
   refreshToken String? // para almacenar el último refresh token válido
   avatar       String?
-  interests    String[] @default([])
+  //interests    String[]  @default([])
 
   role      Role     @default(user)
   createdAt DateTime @default(now())
@@ -56,12 +59,14 @@ model User {
   Ticket          Ticket[]
   EventAttendance EventAttendance[]
   eventImages     EventImage[]
+  categories      Category[]        @relation("UserCategories")
 }
 
 model Category {
   id    String  @id @default(uuid())
   name  String
   Event Event[]
+  users User[]  @relation("UserCategories")
 }
 
 model Event {
