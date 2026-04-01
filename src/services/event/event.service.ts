@@ -268,7 +268,7 @@ export const uploadEventImage = async (
     where: { id: userId },
     select: { role: true },
   });
-  console.log(user);
+
   if (!user) throw new Error("Usuario no encontrado");
   /*  if (user.role !== "publisher") {
      throw new Error("Solo los Publishers pueden subir imágenes");

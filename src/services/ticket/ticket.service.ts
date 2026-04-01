@@ -25,7 +25,7 @@ export class TicketService {
 
     // 2. Calcular totales usando precios del backend
     let subTotal = 0;
-    console.log(ticketTypes)
+
     for (const item of items) {
       const type = ticketTypes.find(t => t.id === item.eventTicketTypeId);
       subTotal += type?.price || 0 * item.quantity;
