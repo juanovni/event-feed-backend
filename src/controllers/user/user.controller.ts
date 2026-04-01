@@ -32,7 +32,6 @@ export const updateUser = async (req: Request, res: Response) => {
     // 1. Subir archivo a Cloudinary (si existe)
     let uploadedUrl: string | null = null;
 
-    console.log("Archivo recibido en updateUser:", req.file);
     if (req.file) {
 
       uploadedUrl = await new Promise<string | null>((resolve, reject) => {
@@ -46,7 +45,6 @@ export const updateUser = async (req: Request, res: Response) => {
 
         uploadStream.end(req.file!.buffer);
       });
-      console.log("URL de imagen subida a Cloudinary:", uploadedUrl);
     }
 
     // 2. Actualizar usuario en la base de datos
