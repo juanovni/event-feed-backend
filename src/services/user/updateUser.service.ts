@@ -13,7 +13,7 @@ export const updateUserService = async (userId: string, data: UpdateUserDto) => 
       where: { id: userId },
       data: {
         ...rest,
-        description: data.bio, // mapeo bio -> description
+        description: data.description,
         birthdate: birthdate ? new Date(birthdate) : undefined,
 
         // relación con categorías (many-to-many)
@@ -30,6 +30,7 @@ export const updateUserService = async (userId: string, data: UpdateUserDto) => 
 
     return updatedUser;
   } catch (error) {
+    console.error("Error en updateUserService:", error);
     throw new Error("Error actualizando el usuario");
   }
 };

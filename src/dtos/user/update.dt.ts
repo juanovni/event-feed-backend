@@ -2,7 +2,7 @@ export interface UpdateUserDto {
   name?: string;
   lastName?: string;
   username?: string;
-  bio?: string;
+  description?: string;
   gender?: string;
   birthdate?: string;
   location?: string;

@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import * as userService from "../../services/user/user.service";
 import * as updateUserService from "../../services/user/updateUser.service";
+import { v2 as cloudinary } from 'cloudinary';
+import prisma from "../../prisma/client";
+cloudinary.config(process.env.CLOUDINARY_URL ?? '');
 
 export const listUsersHandler = async (_req: Request, res: Response) => {
   const users = await userService.getUsers();
@@ -24,13 +27,47 @@ export const updateUser = async (req: Request, res: Response) => {
     const userId = req.user?.id;
     const data = req.body;
 
+    if (!userId) return res.status(401).json({ message: "Usuario no autenticado" });
+
+    // 1. Subir archivo a Cloudinary (si existe)
+    let uploadedUrl: string | null = null;
+
+    console.log("Archivo recibido en updateUser:", req.file);
+    if (req.file) {
+
+      uploadedUrl = await new Promise<string | null>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: "users" },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result?.secure_url ?? null);
+          }
+        );
+
+        uploadStream.end(req.file!.buffer);
+      });
+      console.log("URL de imagen subida a Cloudinary:", uploadedUrl);
+    }
+
     const user = await updateUserService.updateUserService(String(userId), data);
+
+    // 2. Guardar imagen en tabla User (si se subió una nueva)
+    if (uploadedUrl) {
+      await prisma.user.update({
+        where: { id: String(userId) },
+        data: {
+          avatar: uploadedUrl,
+        },
+      });
+    }
 
     return res.json({
       message: "Usuario actualizado correctamente",
       user,
     });
+
   } catch (error: any) {
+    console.log("Error en updateUser:", error);
     return res.status(500).json({
       message: error.message || "Error interno",
     });

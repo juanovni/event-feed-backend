@@ -1,4 +1,6 @@
+
 import { Router } from "express";
+import multer from "multer";
 import { authenticate } from "../../middlewares/auth";
 import {
   getUserSuggestions,
@@ -8,9 +10,10 @@ import {
 
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.get("/", listUsersHandler);
-router.put("/user", authenticate, updateUser);
+router.put("/me", authenticate, upload.single("avatar"), updateUser);
 router.get("/suggestions", authenticate, getUserSuggestions);
 
 export default router;

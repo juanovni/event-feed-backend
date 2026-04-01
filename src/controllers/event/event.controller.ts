@@ -70,12 +70,12 @@ export const createEvent = async (req: Request, res: Response) => {
       });
     }
 
-    await NotificationService.create({
+    /* await NotificationService.create({
       title: "Nuevo evento",
       message: `${event.title} fue creado recientemente`,
       userId: String(userId),
       type: "success",
-    });
+    }); */
 
     res.status(201).json(event);
   } catch (error: any) {
