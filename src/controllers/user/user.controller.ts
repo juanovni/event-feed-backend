@@ -49,9 +49,10 @@ export const updateUser = async (req: Request, res: Response) => {
       console.log("URL de imagen subida a Cloudinary:", uploadedUrl);
     }
 
-    const user = await updateUserService.updateUserService(String(userId), data);
+    // 2. Actualizar usuario en la base de datos
+    await updateUserService.updateUserService(String(userId), data);
 
-    // 2. Guardar imagen en tabla User (si se subió una nueva)
+    // 3. Guardar imagen en tabla User (si se subió una nueva)
     if (uploadedUrl) {
       await prisma.user.update({
         where: { id: String(userId) },
@@ -60,6 +61,9 @@ export const updateUser = async (req: Request, res: Response) => {
         },
       });
     }
+
+    // 4. Obtener usuario actualizado para la respuesta
+    const user = await userService.getUserById(String(userId));
 
     return res.json({
       message: "Usuario actualizado correctamente",
