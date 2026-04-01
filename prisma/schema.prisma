@@ -47,6 +47,8 @@ model User {
   password     String
   refreshToken String? // para almacenar el último refresh token válido
   avatar       String?
+  location     String?
+  phone        String?
   //interests    String[]  @default([])
 
   role      Role     @default(user)

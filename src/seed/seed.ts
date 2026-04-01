@@ -2,10 +2,11 @@ import bcryptjs from "bcryptjs";
 
 interface SeedUser {
   name: string;
+  lastName?: string;
   email: string;
   password: string;
   username: string;
-  description: string;
+  description?: string;
   avatar: string;
   //isFollowing?: boolean;
   //interests: string[];
@@ -99,9 +100,6 @@ export const initialData: SeedData = {
       "password": bcryptjs.hashSync('123456'),
       "username": "juanConstantine",
       "avatar": "https://i.pravatar.cc/150?img=1",
-      /* "interests": [
-        "restaurant"
-      ], */
       "role": "admin"
     },
     {
@@ -111,9 +109,6 @@ export const initialData: SeedData = {
       "password": bcryptjs.hashSync('123456'),
       "username": "josémurillo",
       "avatar": "https://instagram.fgye1-1.fna.fbcdn.net/v/t51.2885-19/338453023_559074162992935_5894736553176390982_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby4xMDgwLmMyIn0&_nc_ht=instagram.fgye1-1.fna.fbcdn.net&_nc_cat=107&_nc_oc=Q6cZ2QH4w-aoek9erQ4wyKKzqoyq3QNxkWKPh-IyRcpTvU45ik2xB-fWP4T_fhXjsojuD3s&_nc_ohc=32QNrsNAmG0Q7kNvwHSmh8d&_nc_gid=z7rsTiSN8Na7ym4K_KCTWQ&edm=AP4sbd4BAAAA&ccb=7-5&oh=00_AfiXe7ZOA2V_rI4Ghz54CyM4CjZWJCVI1WMw1KxEj2RO9w&oe=6918A61A&_nc_sid=7a9f4b",
-      /* "interests": [
-        "nature"
-      ], */
       "role": "user"
     },
     {
@@ -123,9 +118,6 @@ export const initialData: SeedData = {
       "password": bcryptjs.hashSync('123456'),
       "username": "nicanorec",
       "avatar": "https://pbs.twimg.com/profile_images/1443429332496621572/OJ5JizFo_400x400.jpg",
-      /* "interests": [
-        "fitness"
-      ], */
       "role": "publisher"
     },
     {
@@ -135,9 +127,15 @@ export const initialData: SeedData = {
       "password": bcryptjs.hashSync('123456'),
       "username": "cantobarec",
       "avatar": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIGIU5ntOdRV4ROsEWUfqBLF8DV0L39rKKxQ&s",
-      /* "interests": [
-        "fitness"
-      ], */
+      "role": "publisher"
+    },
+    {
+      "name": "Sopla Running Club",
+      "email": "sopla.running.ec@gmail.com",
+      "description": "apto para todos ❤️‍🔥",
+      "password": bcryptjs.hashSync('123456'),
+      "username": "soplarunningclub",
+      "avatar": "https://instagram.fgye1-1.fna.fbcdn.net/v/t51.82787-19/656363410_17938578657176841_8557407468337729683_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby4xMDgwLmMyIn0&_nc_ht=instagram.fgye1-1.fna.fbcdn.net&_nc_cat=109&_nc_oc=Q6cZ2gFTXMHLTguC4TNkRUIhNDp1_PeJE21O_1DZ_U4KSY30eZS1RU-73S9N8cLMhIk-Z8I&_nc_ohc=ycSJDIEwu9EQ7kNvwG49qHC&_nc_gid=aSkEBv8E6XtB_N4YJNDZMA&edm=APoiHPcBAAAA&ccb=7-5&oh=00_Af25XfLePeCYbukeGe_SA8Cx0btsCAX9lFxCiPBLySO_Rw&oe=69D30E13&_nc_sid=22de04",
       "role": "publisher"
     },
     {
@@ -147,9 +145,6 @@ export const initialData: SeedData = {
       "password": bcryptjs.hashSync('123456'),
       "username": "camilatorres",
       "avatar": "https://i.pravatar.cc/150?img=3",
-      /* "interests": [
-        "fashion"
-      ], */
       "role": "user"
     }
   ],
