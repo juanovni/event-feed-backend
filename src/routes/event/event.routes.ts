@@ -6,17 +6,23 @@ import {
   getAllEvent,
   getConfirmedFriends,
   getEventImagesController,
-  uploadEventImageController
+  uploadEventImageController,
+  getEventBySlugController,
+  getEventsByUserIdController
 } from "../../controllers/event/event.controller";
 import {
   createAttendance,
   listAttendances
 } from "../../controllers/event-attendance/eventAttendance.controller";
 
-import { authenticate } from "../../middlewares/auth";
+import { authenticate, optionalAuth } from "../../middlewares/auth";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Rutas públicas (sin requerir login)
+router.get("/slug/:slug", optionalAuth, getEventBySlugController);
+router.get("/user/:userId", optionalAuth, getEventsByUserIdController);
 
 // Rutas protegidas
 router.get("/", authenticate, getAllEvent);
@@ -31,6 +37,6 @@ router.get("/:eventId/confirmed-friends", authenticate, getConfirmedFriends);
 
 router.post("/:eventId/upload-image", authenticate, upload.single("mediaFile"), uploadEventImageController);
 
-router.get("/:eventId/images", getEventImagesController);
+router.get("/:eventId/images", optionalAuth, getEventImagesController);
 
 export default router;
