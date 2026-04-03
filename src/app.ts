@@ -14,14 +14,24 @@ import ticketRoutes from "./routes/ticket/ticket.routes";
 
 const app = express();
 
-// ✅ Configurar CORS
+// ✅ Configurar CORS dinámicamente
+const allowedOrigins = [
+  "http://localhost:3000", // Frontend local (Next.js)
+  "http://localhost:3001",
+  process.env.NEXT_PUBLIC_APP_URL, // Frontend en producción
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000", // Frontend local (Next.js)
-    ],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("No permitido por CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    credentials: true, // Si usas cookies o headers personalizados
+    credentials: true,
   })
 );
 
