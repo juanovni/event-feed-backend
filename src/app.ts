@@ -16,9 +16,10 @@ const app = express();
 
 // ✅ Configurar CORS dinámicamente
 const allowedOrigins = [
-  "http://localhost:3000", // Frontend local (Next.js)
+  "http://localhost:3000",
   "http://localhost:3001",
-  process.env.NEXT_PUBLIC_APP_URL, // Frontend en producción
+  "https://event-feed-frontend.vercel.app",
+  process.env.ALLOWED_ORIGINS,
 ].filter(Boolean);
 
 app.use(
