@@ -15,6 +15,7 @@ export const registerService = async (data: RegisterDto) => {
     email,
     password,
     birthdate,
+    phone,
     gender,
     categories, // array de IDs
   } = data;
@@ -33,7 +34,8 @@ export const registerService = async (data: RegisterDto) => {
   const user = await prisma.user.create({
     data: {
       name,
-      lastName,
+      lastName: lastName || null,
+      phone: phone || null,
       email,
       password: hashedPassword,
       birthdate: new Date(birthdate),
