@@ -1,6 +1,14 @@
 // src/services/ticket.service.ts
 import { CreateTicketDto } from "../../dtos/ticket/ticket.dto";
 import prisma from "../../prisma/client";
+import { sendEventRegistrationTemplate } from "../notification/whatsapp.service";
+
+const formatEventDate = (eventDate: Date) => {
+  return new Date(eventDate).toLocaleString("es-EC", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+};
 
 export class TicketService {
 
@@ -110,10 +118,57 @@ export class TicketService {
   }
 
   async markAsPaid(ticketId: string, transactionId: string) {
-    return prisma.ticket.update({
+    const paidTicket = await prisma.ticket.update({
       where: { id: ticketId },
       data: { isPaid: true, paidAt: new Date(), transactionId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        TicketItem: {
+          include: {
+            event: {
+              select: {
+                id: true,
+                title: true,
+                eventDate: true,
+                location: true,
+                user: {
+                  select: {
+                    phone: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
+
+    const eventsById = new Map(
+      paidTicket.TicketItem.map((item) => [item.event.id, item.event])
+    );
+
+    for (const event of eventsById.values()) {
+      if (!event.user.phone) continue;
+
+      try {
+        await sendEventRegistrationTemplate({
+          to: event.user.phone,
+          attendeeName: paidTicket.user.name,
+          eventTitle: event.title,
+          eventDate: formatEventDate(event.eventDate),
+          location: event.location,
+        });
+      } catch (error) {
+        console.error("Error enviando WhatsApp de pago:", error);
+      }
+    }
+
+    return paidTicket;
   }
 
   private calculateTotals(items: CreateTicketDto["items"], events: any[]) {

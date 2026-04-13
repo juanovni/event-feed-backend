@@ -4,12 +4,12 @@ import jwt from "jsonwebtoken";
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "access_secret_key";
 
 interface TokenPayload {
-  id: number;
+  id: string | number;
   iat: number;
   exp: number;
 }
 
-export const authenticate = (req: any, res: Response, next: NextFunction) => {
+export const authenticate = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader)
     return res.status(401).json({ message: "Token no proporcionado" });
@@ -24,7 +24,7 @@ export const authenticate = (req: any, res: Response, next: NextFunction) => {
   }
 };
 
-export const optionalAuth = (req: any, res: Response, next: NextFunction) => {
+export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
 
   if (authHeader) {
