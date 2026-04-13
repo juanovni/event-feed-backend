@@ -178,6 +178,24 @@ export const getEventBySlugController = async (req: Request, res: Response) => {
   }
 };
 
+export const getEventByIdController = async (req: Request, res: Response) => {
+  try {
+    const { eventId } = req.params;
+    const userId = req.user?.id;
+
+    const event = await eventService.getEventById(eventId, userId ? String(userId) : undefined);
+
+    if (!event) {
+      return res.status(404).json({ message: "Evento no encontrado" });
+    }
+
+    res.json(event);
+  } catch (error: any) {
+    console.error("Error al obtener el evento:", error);
+    res.status(500).json({ message: "Error al obtener el evento" });
+  }
+};
+
 export const getEventsByUserIdController = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;

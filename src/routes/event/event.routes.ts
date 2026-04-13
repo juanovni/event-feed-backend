@@ -1,6 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
-import { toggleInterestHandler } from "../../controllers/event-interest/eventInterest.controller";
+import { getMyInterestedEventsHandler, toggleInterestHandler } from "../../controllers/event-interest/eventInterest.controller";
 import {
   createEvent,
   getAllEvent,
@@ -8,6 +8,7 @@ import {
   getEventImagesController,
   uploadEventImageController,
   getEventBySlugController,
+  getEventByIdController,
   getEventsByUserIdController
 } from "../../controllers/event/event.controller";
 import {
@@ -22,10 +23,12 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Rutas públicas (sin requerir login)
 router.get("/slug/:slug", optionalAuth, getEventBySlugController);
+router.get("/id/:eventId", optionalAuth, getEventByIdController);
 router.get("/user/:userId", optionalAuth, getEventsByUserIdController);
 
 // Rutas protegidas
 router.get("/", authenticate, getAllEvent);
+router.get("/me/interests", authenticate, getMyInterestedEventsHandler);
 router.post("/", authenticate, upload.single("mediaFile"), createEvent);
 
 router.post("/:eventId/toggle-interest", authenticate, toggleInterestHandler);

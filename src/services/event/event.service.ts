@@ -305,6 +305,132 @@ export const getEventBySlug = async (slug: string, authUserId?: string) => {
   };
 };
 
+export const getEventById = async (eventId: string, authUserId?: string) => {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: {
+      id: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          avatar: true,
+        },
+      },
+      title: true,
+      slug: true,
+      description: true,
+      mediaType: true,
+      mediaUrl: true,
+      cost: true,
+      currency: true,
+      gallery: true,
+      location: true,
+      eventDate: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      EventImage: {
+        where: {
+          type: 'event'
+        },
+        select: {
+          id: true,
+          url: true,
+        },
+      },
+      eventTicketTypes: {
+        select: {
+          id: true,
+          name: true,
+          price: true,
+          quantity: true,
+          validUntil: true,
+        }
+      },
+      userStatus: true,
+      createdAt: true,
+    },
+  });
+
+  if (!event) {
+    return null;
+  }
+
+  // Si no hay usuario autenticado, devolver evento básico
+  if (!authUserId) {
+    return {
+      ...event,
+      mediaUrl: event.EventImage[0]?.url || event.mediaUrl,
+      category: event.category?.name,
+      isFollowing: false,
+      isInterested: false,
+      interested: 0,
+      isAttending: false,
+      attendees: 0,
+      hasPaid: false,
+      score: 0
+    };
+  }
+
+  // Si hay usuario autenticado, incluir información adicional
+  const isFollowing = await prisma.follow.findFirst({
+    where: {
+      followerId: authUserId,
+      followingId: event.user.id,
+    },
+  });
+
+  const isInterested = await prisma.eventInterest.findFirst({
+    where: {
+      userId: authUserId,
+      eventId,
+    },
+  });
+
+  const interested = await prisma.eventInterest.count({
+    where: { eventId },
+  });
+
+  const isAttending = await prisma.eventAttendance.findFirst({
+    where: {
+      userId: authUserId,
+      eventId,
+    },
+  });
+
+  const attendees = await prisma.eventAttendance.count({
+    where: { eventId },
+  });
+
+  const hasPaid = await prisma.ticketItem.findFirst({
+    where: {
+      eventId,
+      ticket: {
+        userId: authUserId,
+        isPaid: true,
+      },
+    },
+  });
+
+  return {
+    ...event,
+    mediaUrl: event.EventImage[0]?.url || event.mediaUrl,
+    category: event.category?.name,
+    isFollowing: !!isFollowing,
+    isInterested: !!isInterested,
+    interested,
+    isAttending: !!isAttending,
+    attendees,
+    hasPaid: !!hasPaid,
+    score: 0
+  };
+};
+
 export const getEventsByUserId = async (userId: string, authUserId?: string) => {
   const events = await prisma.event.findMany({
     where: { userId },
