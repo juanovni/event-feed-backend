@@ -54,7 +54,7 @@ export const attendEvent = async (userId: string, eventId: string) => {
       select: { name: true, lastName: true, phone: true },
     });
 
-    if (attendee?.phone) {
+    /* if (attendee?.phone) {
       await sendEventRegistrationTemplate({
         to: attendee.phone,
         attendeeName: `${attendee.name || "Usuario"} ${attendee.lastName || ""}`.trim(),
@@ -62,7 +62,8 @@ export const attendEvent = async (userId: string, eventId: string) => {
         eventDate: formatEventDate(event.eventDate),
         location: event.location,
       });
-    }
+    } */
+
   } catch (error) {
     console.error("Error enviando WhatsApp de registro:", error);
   }
