@@ -72,13 +72,21 @@ export const attendEvent = async (userId: string, eventId: string) => {
 }
 
 export const getAttendees = async (eventId: string) => {
-  return prisma.eventAttendance.findMany({
+  const attendees = await prisma.eventAttendance.findMany({
     where: { eventId },
     include: {
       user: {
-        select: { id: true, name: true, username: true, avatar: true },
+        select: { id: true, name: true, username: true, lastName: true, avatar: true },
       },
     },
   });
+
+  return attendees.map(({ user }) => ({
+    id: user.id,
+    user: user.name,
+    username: user.username,
+    lastName: user.lastName,
+    avatar: user.avatar,
+  }));
 }
 
