@@ -82,6 +82,8 @@ model Event {
   currency    String     @default("USA")
   gallery     String[]   @default([])
   location    String
+  lat         Float?
+  log         Float?
   eventDate   DateTime
   attendees   Int
   userStatus  UserStatus @default(none)

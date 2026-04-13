@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Event" ADD COLUMN     "lat" DOUBLE PRECISION,
+ADD COLUMN     "log" DOUBLE PRECISION;

@@ -22,6 +22,8 @@ export const CreateEventDto = z.object({
   currency: z.string().default("USA"),
   gallery: z.array(z.string().url()).default([]),
   location: z.string().min(1, "La ubicación es obligatoria"),
+  lat: z.coerce.number(),
+  log: z.coerce.number(),
   eventDate: z.coerce.date(), // convierte string -> Date automáticamente
   attendees: z.string(),
   userStatus: UserStatusEnum.default("none"),
