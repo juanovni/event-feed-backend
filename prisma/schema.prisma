@@ -37,7 +37,7 @@ enum ImageStatus {
 
 model User {
   id           String    @id @default(uuid())
-  name         String
+  name         String?
   lastName     String?
   birthdate    DateTime?
   gender       String?
@@ -49,19 +49,34 @@ model User {
   avatar       String?
   location     String?
   phone        String?
-  //interests    String[]  @default([])
+  isVerified   Boolean   @default(false)
 
   role      Role     @default(user)
   createdAt DateTime @default(now())
   Event     Event[]
 
-  following       Follow[]          @relation("FollowingRelation")
-  followers       Follow[]          @relation("FollowerRelation")
-  EventInterest   EventInterest[]
-  Ticket          Ticket[]
-  EventAttendance EventAttendance[]
-  eventImages     EventImage[]
-  categories      Category[]        @relation("UserCategories")
+  following         Follow[]           @relation("FollowingRelation")
+  followers         Follow[]           @relation("FollowerRelation")
+  EventInterest     EventInterest[]
+  Ticket            Ticket[]
+  EventAttendance   EventAttendance[]
+  eventImages       EventImage[]
+  categories        Category[]         @relation("UserCategories")
+  verificationCodes VerificationCode[]
+}
+
+model VerificationCode {
+  id        String    @id @default(uuid())
+  userId    String
+  code      String
+  attempts  Int       @default(0)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Category {

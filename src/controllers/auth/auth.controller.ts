@@ -1,3 +1,4 @@
+
 import { Request, Response } from "express";
 import prisma from "../../prisma/client";
 import bcrypt from "bcrypt";
@@ -6,11 +7,25 @@ import {
   generateRefreshToken,
   verifyRefreshToken,
 } from "../../config/jwt";
-import { registerService } from "../../services/user/registerUser.service";
+import { completeRegisterService, preRegisterService } from "../../services/user/registerUser.service";
+
+export const preRegister = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+    const result = await preRegisterService(email, password);
+
+    res.status(201).json(result);
+
+  } catch (error: any) {
+    res.status(400).json({
+      message: error.message || "Error al registrar usuario",
+    });
+  }
+};
 
 export const register = async (req: Request, res: Response) => {
   try {
-    const result = await registerService(req.body);
+    const result = await completeRegisterService(req.body);
 
     res.status(201).json({
       user: {
@@ -44,7 +59,7 @@ export const login = async (req: Request, res: Response) => {
   try {
 
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email, isVerified: true },
       include: {
         categories: {
           select: {
@@ -55,7 +70,7 @@ export const login = async (req: Request, res: Response) => {
       },
     });
 
-    if (!user) return res.status(400).json({ message: "Credenciales incorrectas" });
+    if (!user) return res.status(400).json({ message: "Credenciales incorrectas o usuario no verificado" });
 
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(400).json({ message: "Credenciales incorrectas" });
