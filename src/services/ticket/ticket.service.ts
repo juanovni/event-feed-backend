@@ -1,14 +1,14 @@
 // src/services/ticket.service.ts
 import { CreateTicketDto } from "../../dtos/ticket/ticket.dto";
 import prisma from "../../prisma/client";
-import { sendEventRegistrationTemplate } from "../notification/whatsapp.service";
+/* import { sendEventRegistrationTemplate } from "../notification/whatsapp.service";
 
 const formatEventDate = (eventDate: Date) => {
   return new Date(eventDate).toLocaleString("es-EC", {
     dateStyle: "medium",
     timeStyle: "short",
   });
-};
+}; */
 
 export class TicketService {
 
@@ -156,13 +156,13 @@ export class TicketService {
       if (!event.user.phone) continue;
 
       try {
-        await sendEventRegistrationTemplate({
+        /* await sendEventRegistrationTemplate({
           to: event.user.phone,
           attendeeName: paidTicket.user.name,
           eventTitle: event.title,
           eventDate: formatEventDate(event.eventDate),
           location: event.location,
-        });
+        }); */
       } catch (error) {
         console.error("Error enviando WhatsApp de pago:", error);
       }
