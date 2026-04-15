@@ -12,7 +12,7 @@ export const sendVerificationCode = async (email: string) => {
 
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, name: true, email: true },
+    select: { id: true, username: true, name: true, email: true },
   });
 
   if (!user) throw new Error("Usuario no encontrado");
@@ -29,7 +29,7 @@ export const sendVerificationCode = async (email: string) => {
     data: { userId: user.id, code, expiresAt },
   });
 
-  await sendVerificationEmail(email, "Usuario", code);
+  await sendVerificationEmail(email, user.username, code);
 
   return { message: "Código enviado al correo registrado" };
 };
