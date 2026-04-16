@@ -20,6 +20,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://localhost:3001",
   "https://event-feed-frontend.vercel.app",
+  "https://quebuenplan.vercel.app",
   process.env.ALLOWED_ORIGINS,
 ].filter(Boolean);
 
