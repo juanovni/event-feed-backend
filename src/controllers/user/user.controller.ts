@@ -11,6 +11,24 @@ export const listUsersHandler = async (_req: Request, res: Response) => {
   res.json(users);
 };
 
+export const getUserByIdHandler = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = await userService.getUserById(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    const { password, refreshToken, ...safeUser } = user;
+
+    return res.json(safeUser);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Error al obtener el usuario" });
+  }
+};
+
 export const getUserSuggestions = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
