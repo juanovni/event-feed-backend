@@ -16,6 +16,8 @@ export const getAllEvent = async (req: Request, res: Response) => {
 };
 
 
+const createEventWithFileDto = CreateEventDto.partial({ mediaUrl: true });
+
 export const createEvent = async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
@@ -32,7 +34,8 @@ export const createEvent = async (req: Request, res: Response) => {
     }
 
 
-    const eventParsed = CreateEventDto.safeParse(req.body);
+    const eventDto = req.file ? createEventWithFileDto : CreateEventDto;
+    const eventParsed = eventDto.safeParse(req.body);
 
     if (!eventParsed.success) {
       return res.status(400).json({ message: "Datos inválidos", error: eventParsed.error });
@@ -55,7 +58,12 @@ export const createEvent = async (req: Request, res: Response) => {
       });
     }
 
-    const event = await eventService.createEvent(String(userId), eventParsed.data);
+    const mediaUrl = uploadedUrl ?? eventParsed.data.mediaUrl;
+    if (!mediaUrl) {
+      return res.status(502).json({ message: "La subida no devolvió una URL para el evento" });
+    }
+
+    const event = await eventService.createEvent(String(userId), { ...eventParsed.data, mediaUrl });
 
     // 🖼️ Guardar imagen en tabla EventImage
     if (uploadedUrl) {
