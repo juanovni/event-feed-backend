@@ -63,6 +63,10 @@ model User {
   eventImages       EventImage[]
   categories        Category[]         @relation("UserCategories")
   verificationCodes VerificationCode[]
+  accessAssignments EventAccessAssignment[]
+  admissionPasses AdmissionPass[] @relation("PassOwner")
+  redeemedPasses AdmissionPass[] @relation("PassRedeemer")
+  admissionScans AdmissionScan[]
 }
 
 model VerificationCode {
@@ -117,6 +121,9 @@ model Event {
   EventImage       EventImage[]
   EventAttendance  EventAttendance[]
   eventTicketTypes EventTicketType[]
+  accessAssignments EventAccessAssignment[]
+  admissionPasses AdmissionPass[]
+  admissionScans AdmissionScan[]
 }
 
 model EventImage {
@@ -182,6 +189,7 @@ model EventAttendance {
 
   createdAt DateTime @default(now())
 
+  pass AdmissionPass?
   @@unique([userId, eventId]) // evita duplicados
 }
 
@@ -222,6 +230,7 @@ model TicketItem {
   eventId String
 
   eventTicketTypeId String?
+  passes AdmissionPass[]
 }
 
 model PaymentAttempt {
@@ -268,6 +277,57 @@ model SettlementConfig {
   processingTaxRate Decimal  @db.Decimal(9, 6)
   updatedBy         String
   updatedAt         DateTime @updatedAt
+}
+
+model EventAccessAssignment {
+  id         String    @id @default(uuid())
+  eventId    String
+  event      Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status     String    @default("pending")
+  createdAt  DateTime  @default(now())
+  acceptedAt DateTime?
+  revokedAt  DateTime?
+
+  @@unique([eventId, userId])
+  @@index([userId, status])
+}
+
+model AdmissionPass {
+  id           String           @id @default(uuid())
+  token        String           @unique @default(uuid())
+  eventId      String
+  event        Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User             @relation("PassOwner", fields: [userId], references: [id], onDelete: Cascade)
+  ticketItemId String?
+  ticketItem   TicketItem?      @relation(fields: [ticketItemId], references: [id], onDelete: Cascade)
+  unitIndex    Int?
+  attendanceId String?          @unique
+  attendance   EventAttendance? @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  redeemedAt   DateTime?
+  redeemedBy   String?
+  redeemer     User?            @relation("PassRedeemer", fields: [redeemedBy], references: [id], onDelete: SetNull)
+  createdAt    DateTime         @default(now())
+  scans        AdmissionScan[]
+
+  @@unique([ticketItemId, unitIndex])
+  @@index([userId, eventId])
+}
+
+model AdmissionScan {
+  id        String   @id @default(uuid())
+  eventId   String
+  event     Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  actorId   String
+  actor     User           @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  passId    String?
+  pass      AdmissionPass? @relation(fields: [passId], references: [id], onDelete: SetNull)
+  result    String
+  createdAt DateTime @default(now())
+
+  @@index([eventId, createdAt])
 }
 
 model Notification {
