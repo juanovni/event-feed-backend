@@ -22,6 +22,8 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
       currency: true,
       gallery: true,
       location: true,
+      lat: true,
+      log: true,
       eventDate: true,
       slug: true,
       category: {
