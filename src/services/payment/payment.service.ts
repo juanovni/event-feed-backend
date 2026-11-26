@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import prisma from "../../prisma/client";
 import { z } from "zod";
+import { calculateSettlement, settlementRates } from "../settlement/settlement.service";
 
 const billingSchema = z.object({
   name: z.string().trim().min(1).max(150),
@@ -19,9 +20,9 @@ const billingSchema = z.object({
 type PurchaseItem = { eventId: string; eventTicketTypeId: string; quantity: number };
 
 function configuration() {
-  const { PAYPHONE_TOKEN, PAYPHONE_STORE_ID, PAYPHONE_RESPONSE_URL, TICKET_TAX_RATE } = process.env;
+  const { PAYPHONE_TOKEN, PAYPHONE_STORE_ID, PAYPHONE_RESPONSE_URL, PAYPHONE_CURRENCY, TICKET_TAX_RATE } = process.env;
   const taxRate = Number(TICKET_TAX_RATE);
-  if (!PAYPHONE_TOKEN || !PAYPHONE_STORE_ID || !PAYPHONE_RESPONSE_URL ||
+  if (!PAYPHONE_TOKEN || !PAYPHONE_STORE_ID || !PAYPHONE_RESPONSE_URL || !PAYPHONE_CURRENCY || !/^[A-Z]{3}$/.test(PAYPHONE_CURRENCY) ||
       !TICKET_TAX_RATE || !Number.isFinite(taxRate) || taxRate < 0 || taxRate > 1) {
     throw new Error("La configuración de pagos está incompleta.");
   }
@@ -30,7 +31,7 @@ function configuration() {
       !(responseUrl.protocol === "http:" && responseUrl.hostname === "localhost")) {
     throw new Error("La URL de respuesta de pagos no es válida.");
   }
-  return { token: PAYPHONE_TOKEN, storeId: PAYPHONE_STORE_ID, responseUrl: responseUrl.href, taxRate };
+  return { token: PAYPHONE_TOKEN, storeId: PAYPHONE_STORE_ID, responseUrl: responseUrl.href, currency: PAYPHONE_CURRENCY, taxRate };
 }
 
 async function requestPayphone(path: string, token: string, body: object) {
@@ -69,7 +70,7 @@ export async function quotePayment(items: PurchaseItem[]) {
   });
   const subtotal = lines.reduce((sum, line) => sum + line.amount, 0);
   const tax = Math.round(subtotal * config.taxRate);
-  return { lines, subtotal, tax, total: subtotal + tax, taxRate: config.taxRate, currency: "USD" };
+  return { lines, subtotal, tax, total: subtotal + tax, taxRate: config.taxRate, currency: config.currency };
 }
 
 export async function preparePayment(userId: string, items: PurchaseItem[], expectedTotal?: number, billingData?: unknown, termsAccepted?: unknown) {
@@ -85,6 +86,7 @@ export async function preparePayment(userId: string, items: PurchaseItem[], expe
 
   if (termsAccepted !== true) throw new Error("Debes aceptar los términos y condiciones.");
   const billing = billingSchema.parse(billingData);
+  const rates = await settlementRates();
   const paymentId = randomUUID();
   const purchase = await prisma.$transaction(async tx => {
     const types = await tx.eventTicketType.findMany({
@@ -110,6 +112,8 @@ export async function preparePayment(userId: string, items: PurchaseItem[], expe
     if (expectedTotal !== undefined && (!Number.isSafeInteger(expectedTotal) || expectedTotal !== subtotal + tax)) {
       throw new Error("El precio cambió. Actualiza el resumen antes de continuar.");
     }
+    const amounts = calculateSettlement(subtotal, tax, rates);
+    const organizerId = types[0].event.userId;
     const ticket = await tx.ticket.create({
       data: {
         userId, billingData: billing, termsVersion: "2026-11-26", termsAcceptedAt: new Date(), subTotal: subtotal / 100, tax: tax / 100, total: (subtotal + tax) / 100,
@@ -121,6 +125,18 @@ export async function preparePayment(userId: string, items: PurchaseItem[], expe
           price: types.find(type => type.id === item.eventTicketTypeId)!.price,
         })) },
         payment: { create: { id: paymentId } },
+        settlement: { create: {
+          organizerId,
+          eventId: items[0].eventId,
+          currency: config.currency,
+          ticketSubtotalCents: subtotal,
+          ticketTaxCents: tax,
+          buyerTotalCents: amounts.buyerTotal,
+          ...rates,
+          commissionCents: amounts.commissionCents,
+          commissionTaxCents: amounts.commissionTaxCents,
+          estimatedProcessingCents: amounts.estimatedProcessingCents,
+        } },
       },
     });
     return { ticket, subtotal, tax };
@@ -136,7 +152,7 @@ export async function preparePayment(userId: string, items: PurchaseItem[], expe
     amountWithTax: purchase.subtotal,
     amountWithoutTax: 0,
     tax: purchase.tax,
-    currency: "USD",
+    currency: config.currency,
     clientTransactionId: paymentId,
     storeId: config.storeId,
     responseUrl: config.responseUrl,
@@ -175,7 +191,7 @@ export async function confirmPayment(userId: string, id: unknown, clientTransact
     throw new Error("Datos de pago inválidos.");
   }
   const attempt = await prisma.paymentAttempt.findUnique({
-    where: { id: clientTransactionId }, include: { ticket: true },
+    where: { id: clientTransactionId }, include: { ticket: { include: { settlement: true } } },
   });
   if (!attempt || attempt.ticket.userId !== userId) throw new Error("Compra no encontrada.");
   if (attempt.status === "approved") {
@@ -189,7 +205,7 @@ export async function confirmPayment(userId: string, id: unknown, clientTransact
   });
   if (result.clientTransactionId !== clientTransactionId ||
       String(result.transactionId) !== String(id) ||
-      result.amount !== Math.round(attempt.ticket.total * 100) || result.currency !== "USD") {
+      result.amount !== Math.round(attempt.ticket.total * 100) || result.currency !== (attempt.ticket.settlement?.currency ?? config.currency)) {
     throw new Error("Los datos del pago no coinciden con la compra.");
   }
   if (result.statusCode === 3 && result.transactionStatus === "Approved") {

@@ -188,23 +188,6 @@ export class TicketService {
     return paidTicket;
   }
 
-  private calculateTotals(items: CreateTicketDto["items"], events: any[]) {
-    return items.reduce(
-      (totals, item) => {
-        const event = events.find((e) => e.id === item.eventId);
-        if (!event) throw new Error(`${item.eventId} no existe - 500`);
-
-        const sub = event.cost * item.quantity;
-        totals.subTotal += sub;
-        totals.tax += sub * 0.15;
-        totals.total += sub * 1.15;
-
-        return totals;
-      },
-      { subTotal: 0, tax: 0, total: 0 }
-    );
-  }
-
   private generateTicketNumber(id: string, title?: string, createdAt?: Date) {
     const shortId = id.split("-")[0].toUpperCase();
     const titlePart =

@@ -4,6 +4,7 @@ import { initialData } from './seed';
 async function main() {
   // 1. Borrar registros 
   await prisma.$transaction([
+    prisma.ticketSettlement.deleteMany(),
     prisma.paymentAttempt.deleteMany(),
     prisma.ticketItem.deleteMany(),
     prisma.ticket.deleteMany(),
