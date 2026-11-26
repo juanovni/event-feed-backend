@@ -211,7 +211,7 @@ export class TicketService {
       subTotal: ticket.subTotal,
       tax: ticket.tax,
       total: ticket.total,
-      itemsInOrder: ticket.TicketItem?.length ?? 0,
+      itemsInOrder: ticket.TicketItem?.reduce((total: number, item: { quantity: number }) => total + item.quantity, 0) ?? 0,
       isPaid: ticket.isPaid ?? false,
       paidAt: ticket.paidAt,
       createdAt: ticket.createdAt,
