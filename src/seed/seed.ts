@@ -115,12 +115,12 @@ export const initialData: SeedData = {
       "isVerified": true
     },
     {
-      "name": "Cantobar EC",
-      "email": "cantobar.ec@gmail.com",
+      "name": "La Cuadra EC",
+      "email": "lacuadraec@gmail.com",
       "description": "",
       "password": bcryptjs.hashSync('123456'),
       "username": "cantobarec",
-      "avatar": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIGIU5ntOdRV4ROsEWUfqBLF8DV0L39rKKxQ&s",
+      "avatar": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQLgDYFW5d31ID4p89I1nodW3EbdBVhtcDgkYAxlbK_Dae0d_Mk3wtt0Kiw&s=10",
       "role": "publisher",
       "isVerified": true
     },

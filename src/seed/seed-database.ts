@@ -3,18 +3,20 @@ import { initialData } from './seed';
 
 async function main() {
   // 1. Borrar registros 
-  await prisma.eventTicketType.deleteMany();
-  await prisma.ticketItem.deleteMany();
-  await prisma.ticket.deleteMany();
-  await prisma.eventTicketType.deleteMany();
-  await prisma.eventImage.deleteMany();
-  await prisma.notification.deleteMany();
-  await prisma.eventAttendance.deleteMany();
-  await prisma.eventInterest.deleteMany();
-  await prisma.follow.deleteMany();
-  await prisma.event.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.category.deleteMany();
+  await prisma.$transaction([
+    prisma.paymentAttempt.deleteMany(),
+    prisma.ticketItem.deleteMany(),
+    prisma.ticket.deleteMany(),
+    prisma.eventTicketType.deleteMany(),
+    prisma.eventImage.deleteMany(),
+    prisma.notification.deleteMany(),
+    prisma.eventAttendance.deleteMany(),
+    prisma.eventInterest.deleteMany(),
+    prisma.follow.deleteMany(),
+    prisma.event.deleteMany(),
+    prisma.user.deleteMany(),
+    prisma.category.deleteMany(),
+  ]);
 
   const { users, categories, events } = initialData;
 

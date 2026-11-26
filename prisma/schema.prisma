@@ -202,6 +202,9 @@ model Ticket {
   userId String
 
   transactionId String?
+  billingData   Json?
+  termsVersion  String?
+  termsAcceptedAt DateTime?
   TicketItem    TicketItem[]
   payment       PaymentAttempt?
 }

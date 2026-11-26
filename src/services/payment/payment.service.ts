@@ -1,5 +1,20 @@
 import { randomUUID } from "crypto";
 import prisma from "../../prisma/client";
+import { z } from "zod";
+
+const billingSchema = z.object({
+  name: z.string().trim().min(1).max(150),
+  email: z.string().trim().email().max(254),
+  phone: z.string().trim().min(5).max(30),
+  documentType: z.enum(["cedula", "ruc", "passport"]),
+  documentNumber: z.string().trim().min(3).max(30),
+  billingName: z.string().trim().min(1).max(150),
+}).superRefine((data, ctx) => {
+  const patterns = { cedula: /^\d{10}$/, ruc: /^\d{13}$/, passport: /^[a-zA-Z0-9-]{3,30}$/ };
+  if (!patterns[data.documentType].test(data.documentNumber)) {
+    ctx.addIssue({ code: "custom", path: ["documentNumber"], message: "Número de identificación inválido." });
+  }
+});
 
 type PurchaseItem = { eventId: string; eventTicketTypeId: string; quantity: number };
 
@@ -57,7 +72,7 @@ export async function quotePayment(items: PurchaseItem[]) {
   return { lines, subtotal, tax, total: subtotal + tax, taxRate: config.taxRate, currency: "USD" };
 }
 
-export async function preparePayment(userId: string, items: PurchaseItem[], expectedTotal?: number) {
+export async function preparePayment(userId: string, items: PurchaseItem[], expectedTotal?: number, billingData?: unknown, termsAccepted?: unknown) {
   const config = configuration();
   if (!Array.isArray(items) || items.length === 0 || items.length > 20 ||
       items.some(item => !item || typeof item.eventId !== "string" ||
@@ -68,6 +83,8 @@ export async function preparePayment(userId: string, items: PurchaseItem[], expe
     throw new Error("La selección de entradas no es válida.");
   }
 
+  if (termsAccepted !== true) throw new Error("Debes aceptar los términos y condiciones.");
+  const billing = billingSchema.parse(billingData);
   const paymentId = randomUUID();
   const purchase = await prisma.$transaction(async tx => {
     const types = await tx.eventTicketType.findMany({
@@ -95,7 +112,7 @@ export async function preparePayment(userId: string, items: PurchaseItem[], expe
     }
     const ticket = await tx.ticket.create({
       data: {
-        userId, subTotal: subtotal / 100, tax: tax / 100, total: (subtotal + tax) / 100,
+        userId, billingData: billing, termsVersion: "2026-11-26", termsAcceptedAt: new Date(), subTotal: subtotal / 100, tax: tax / 100, total: (subtotal + tax) / 100,
         itemsInOrder: items.reduce((sum, item) => sum + item.quantity, 0),
         TicketItem: { create: items.map(item => ({
           eventId: item.eventId,
