@@ -17,6 +17,8 @@ export const attendEvent = async (userId: string, eventId: string) => {
       title: true,
       eventDate: true,
       location: true,
+      cost: true,
+      eventTicketTypes: { select: { price: true } },
       user: {
         select: {
           id: true,
@@ -27,7 +29,16 @@ export const attendEvent = async (userId: string, eventId: string) => {
   });
 
   if (!event) throw new Error("Evento no encontrado");
-  //if (event.cost > 0) throw new Error("Solo se pueden registrar eventos gratuitos");
+  const requiresPayment = event.eventTicketTypes.length
+    ? event.eventTicketTypes.every(type => type.price > 0)
+    : event.cost > 0;
+  if (requiresPayment) {
+    const paidTicket = await prisma.ticket.findFirst({
+      where: { userId, isPaid: true, TicketItem: { some: { eventId } } },
+      select: { id: true },
+    });
+    if (!paidTicket) throw new Error("Se requiere una entrada pagada para confirmar la asistencia");
+  }
 
   // Verificar si ya existe la asistencia
   const existing = await prisma.eventAttendance.findUnique({

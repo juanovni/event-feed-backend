@@ -95,23 +95,13 @@ export const initialData: SeedData = {
   ],
   users: [
     {
-      "name": "Juan Constantine",
-      "email": "juan.constantine@gmail.com",
+      "name": "Administrador QBP",
+      "email": "admin.quebuenplanec@gmail.com",
       "description": "",
-      "password": bcryptjs.hashSync('123456'),
+      "password": bcryptjs.hashSync('A@!229!QBP'),
       "username": "juanConstantine",
       "avatar": "https://i.pravatar.cc/150?img=1",
       "role": "admin",
-      "isVerified": true
-    },
-    {
-      "name": "José Murillo",
-      "email": "jose.murillo@gmail.com",
-      "description": "",
-      "password": bcryptjs.hashSync('123456'),
-      "username": "josémurillo",
-      "avatar": "https://instagram.fgye1-1.fna.fbcdn.net/v/t51.2885-19/338453023_559074162992935_5894736553176390982_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby4xMDgwLmMyIn0&_nc_ht=instagram.fgye1-1.fna.fbcdn.net&_nc_cat=107&_nc_oc=Q6cZ2QH4w-aoek9erQ4wyKKzqoyq3QNxkWKPh-IyRcpTvU45ik2xB-fWP4T_fhXjsojuD3s&_nc_ohc=32QNrsNAmG0Q7kNvwHSmh8d&_nc_gid=z7rsTiSN8Na7ym4K_KCTWQ&edm=AP4sbd4BAAAA&ccb=7-5&oh=00_AfiXe7ZOA2V_rI4Ghz54CyM4CjZWJCVI1WMw1KxEj2RO9w&oe=6918A61A&_nc_sid=7a9f4b",
-      "role": "user",
       "isVerified": true
     },
     {
@@ -125,22 +115,12 @@ export const initialData: SeedData = {
       "isVerified": true
     },
     {
-      "name": "Cantobar EC",
-      "email": "cantobar.ec@gmail.com",
+      "name": "La Cuadra EC",
+      "email": "lacuadraec@gmail.com",
       "description": "",
       "password": bcryptjs.hashSync('123456'),
       "username": "cantobarec",
-      "avatar": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIGIU5ntOdRV4ROsEWUfqBLF8DV0L39rKKxQ&s",
-      "role": "publisher",
-      "isVerified": true
-    },
-    {
-      "name": "Sopla Running Club",
-      "email": "sopla.running.ec@gmail.com",
-      "description": "apto para todos ❤️‍🔥",
-      "password": bcryptjs.hashSync('123456'),
-      "username": "soplarunningclub",
-      "avatar": "https://instagram.fgye1-1.fna.fbcdn.net/v/t51.82787-19/656363410_17938578657176841_8557407468337729683_n.jpg?efg=eyJ2ZW5jb2RlX3RhZyI6InByb2ZpbGVfcGljLmRqYW5nby4xMDgwLmMyIn0&_nc_ht=instagram.fgye1-1.fna.fbcdn.net&_nc_cat=109&_nc_oc=Q6cZ2gFTXMHLTguC4TNkRUIhNDp1_PeJE21O_1DZ_U4KSY30eZS1RU-73S9N8cLMhIk-Z8I&_nc_ohc=ycSJDIEwu9EQ7kNvwG49qHC&_nc_gid=aSkEBv8E6XtB_N4YJNDZMA&edm=APoiHPcBAAAA&ccb=7-5&oh=00_Af25XfLePeCYbukeGe_SA8Cx0btsCAX9lFxCiPBLySO_Rw&oe=69D30E13&_nc_sid=22de04",
+      "avatar": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQLgDYFW5d31ID4p89I1nodW3EbdBVhtcDgkYAxlbK_Dae0d_Mk3wtt0Kiw&s=10",
       "role": "publisher",
       "isVerified": true
     },

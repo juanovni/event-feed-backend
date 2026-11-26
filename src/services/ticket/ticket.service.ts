@@ -15,7 +15,9 @@ export class TicketService {
   async createTicket(userId: string, data: CreateTicketDto) {
     const { items } = data;
 
-    if (!items?.length) {
+    if (!Array.isArray(items) || !items.length ||
+      items.some(item => !item || typeof item.eventTicketTypeId !== "string" ||
+        typeof item.eventId !== "string" || !Number.isSafeInteger(item.quantity) || item.quantity <= 0)) {
       throw new Error("Debe incluir al menos un item para crear un ticket.");
     }
 
@@ -31,16 +33,31 @@ export class TicketService {
       throw new Error("Uno o más tipos de ticket no existen.");
     }
 
+    if (items.some(item => {
+      const type = ticketTypes.find(t => t.id === item.eventTicketTypeId);
+      return !type || type.eventId !== item.eventId ||
+        (type.validUntil !== null && type.validUntil < new Date()) ||
+        item.quantity > type.quantity || !Number.isFinite(type.price) || type.price < 0;
+    })) {
+      throw new Error("Una o más entradas no son válidas o no están disponibles.");
+    }
+
     // 2. Calcular totales usando precios del backend
     let subTotal = 0;
 
     for (const item of items) {
       const type = ticketTypes.find(t => t.id === item.eventTicketTypeId);
-      subTotal += type?.price || 0 * item.quantity;
+      subTotal += Math.round((type?.price ?? 0) * 100) * item.quantity;
     }
 
-    const tax = subTotal * 0.15; // ejemplo
-    const total = subTotal + tax;
+    const taxRate = Number(process.env.TICKET_TAX_RATE);
+    if (!Number.isFinite(taxRate) || taxRate < 0 || taxRate > 1 || !process.env.TICKET_TAX_RATE) {
+      throw new Error("El impuesto de entradas no está configurado.");
+    }
+    const taxInCents = Math.round(subTotal * taxRate);
+    const total = (subTotal + taxInCents) / 100;
+    const tax = taxInCents / 100;
+    subTotal /= 100;
 
     const itemsInOrder = items.reduce((acc, i) => acc + i.quantity, 0);
 
@@ -83,7 +100,7 @@ export class TicketService {
 
   async getTicketsByUser(userId: string) {
     const tickets = await prisma.ticket.findMany({
-      where: { userId },
+      where: { userId, isPaid: true },
       include: {
         TicketItem: {
           include: {
@@ -101,7 +118,7 @@ export class TicketService {
 
   async getTicketById(userId: string, ticketId: string) {
     const ticket = await prisma.ticket.findUnique({
-      where: { id: ticketId, userId },
+      where: { id: ticketId, userId, isPaid: true },
       include: {
         TicketItem: {
           include: {
@@ -169,23 +186,6 @@ export class TicketService {
     }
 
     return paidTicket;
-  }
-
-  private calculateTotals(items: CreateTicketDto["items"], events: any[]) {
-    return items.reduce(
-      (totals, item) => {
-        const event = events.find((e) => e.id === item.eventId);
-        if (!event) throw new Error(`${item.eventId} no existe - 500`);
-
-        const sub = event.cost * item.quantity;
-        totals.subTotal += sub;
-        totals.tax += sub * 0.15;
-        totals.total += sub * 1.15;
-
-        return totals;
-      },
-      { subTotal: 0, tax: 0, total: 0 }
-    );
   }
 
   private generateTicketNumber(id: string, title?: string, createdAt?: Date) {

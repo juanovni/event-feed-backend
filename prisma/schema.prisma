@@ -202,7 +202,12 @@ model Ticket {
   userId String
 
   transactionId String?
+  billingData   Json?
+  termsVersion  String?
+  termsAcceptedAt DateTime?
   TicketItem    TicketItem[]
+  payment       PaymentAttempt?
+  settlement    TicketSettlement?
 }
 
 model TicketItem {
@@ -215,6 +220,54 @@ model TicketItem {
 
   event   Event  @relation(fields: [eventId], references: [id])
   eventId String
+
+  eventTicketTypeId String?
+}
+
+model PaymentAttempt {
+  id              String   @id @default(uuid())
+  ticketId        String   @unique
+  ticket          Ticket   @relation(fields: [ticketId], references: [id])
+  providerId      String?  @unique
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TicketSettlement {
+  id                          String   @id @default(uuid())
+  ticketId                    String   @unique
+  ticket                      Ticket   @relation(fields: [ticketId], references: [id])
+  organizerId                 String
+  eventId                     String
+  currency                    String
+  ticketSubtotalCents         Int
+  ticketTaxCents              Int
+  buyerTotalCents             Int
+  commissionRate              Decimal  @db.Decimal(9, 6)
+  commissionTaxRate           Decimal  @db.Decimal(9, 6)
+  processingRate              Decimal  @db.Decimal(9, 6)
+  processingTaxRate           Decimal  @db.Decimal(9, 6)
+  commissionCents             Int
+  commissionTaxCents          Int
+  estimatedProcessingCents    Int
+  actualProcessingCents       Int?
+  actualProcessingRecordedAt  DateTime?
+  actualProcessingRecordedBy  String?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+
+  @@index([organizerId, eventId])
+}
+
+model SettlementConfig {
+  id                String   @id
+  commissionRate    Decimal  @db.Decimal(9, 6)
+  commissionTaxRate Decimal  @db.Decimal(9, 6)
+  processingRate    Decimal  @db.Decimal(9, 6)
+  processingTaxRate Decimal  @db.Decimal(9, 6)
+  updatedBy         String
+  updatedAt         DateTime @updatedAt
 }
 
 model Notification {

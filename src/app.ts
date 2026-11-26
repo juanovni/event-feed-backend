@@ -9,6 +9,8 @@ import authRoutes from "./routes/auth/auth.routes";
 import notificationRoutes from "./routes/notification/notification.routes";
 import categoryRoutes from "./routes/category/category.routes";
 import ticketRoutes from "./routes/ticket/ticket.routes";
+import paymentRoutes from "./routes/payment/payment.routes";
+import settlementRoutes from "./routes/settlement/settlement.routes";
 import verificationRoutes from "./routes/verification/verification.routes";
 
 /* import { errorHandler } from "./middlewares/errorHandler"; */
@@ -50,6 +52,8 @@ app.use("/api/follow", followRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/tickets", ticketRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/settlements", settlementRoutes);
 app.use("/api/verification", verificationRoutes);
 
 
