@@ -41,6 +41,10 @@ export const createEvent = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Datos inválidos", error: eventParsed.error });
     }
 
+    if (eventParsed.data.eventDate.getTime() <= Date.now()) {
+      return res.status(400).json({ message: "La fecha y hora del evento deben ser futuras." });
+    }
+
     // 📸 Subir archivo a Cloudinary (si existe)
     let uploadedUrl: string | null = null;
 
