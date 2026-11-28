@@ -117,6 +117,7 @@ export async function recordProcessingFee(actorId: string, settlementId: string,
   return prisma.$transaction(async tx => {
     const row = await tx.ticketSettlement.findUnique({ where: { id: settlementId }, include: { ticket: true } });
     if (!row || !row.ticket.isPaid) throw new Error("Venta pagada no encontrada.");
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${JSON.stringify(["organizer-settlement", row.eventId, row.currency])}))`;
     if (actualProcessingCents > row.buyerTotalCents - row.commissionCents - row.commissionTaxCents) {
       throw new Error("El costo excede el saldo disponible.");
     }

@@ -70,6 +70,8 @@ model User {
   recordedPromoterPayments PromoterPayment[] @relation("PromoterPaymentRecorder")
   recordedPromoterAdjustments PromoterCommissionAdjustment[] @relation("AdjustmentRecorder")
   reversedPromoterAdjustments PromoterCommissionAdjustment[] @relation("AdjustmentReverser")
+  organizerSettlementReviews OrganizerSettlementReview[] @relation("SettlementReviewer")
+  organizerSettlementPayments OrganizerSettlementPayment[] @relation("SettlementPayer")
   admissionPasses AdmissionPass[] @relation("PassOwner")
   redeemedPasses AdmissionPass[] @relation("PassRedeemer")
   admissionScans AdmissionScan[]
@@ -135,6 +137,8 @@ model Event {
   accessAssignments EventAccessAssignment[]
   promoters EventPromoter[]
   promoterPayments PromoterPayment[]
+  organizerSettlementReviews OrganizerSettlementReview[]
+  organizerSettlementPayments OrganizerSettlementPayment[]
   admissionPasses AdmissionPass[]
   admissionScans AdmissionScan[]
 }
@@ -239,6 +243,37 @@ model PromoterPayment {
   recordedBy  User @relation("PromoterPaymentRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
 
   @@index([eventId, promoterId, currency])
+}
+
+model OrganizerSettlementReview {
+  id String @id @default(uuid())
+  eventId String
+  currency String
+  reviewerId String
+  amountCents Int
+  snapshotHash String
+  snapshot Json
+  createdAt DateTime @default(now())
+  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  reviewer User @relation("SettlementReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  payment OrganizerSettlementPayment?
+  @@index([eventId, currency, createdAt])
+}
+
+model OrganizerSettlementPayment {
+  id String @id
+  eventId String
+  currency String
+  reviewId String @unique
+  recordedById String
+  amountCents Int
+  paidAt DateTime
+  reference String
+  createdAt DateTime @default(now())
+  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  review OrganizerSettlementReview @relation(fields: [reviewId], references: [id], onDelete: Restrict)
+  recordedBy User @relation("SettlementPayer", fields: [recordedById], references: [id], onDelete: Restrict)
+  @@unique([eventId, currency])
 }
 
 model EventAttendance {
