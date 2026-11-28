@@ -25,6 +25,7 @@ export const CreateEventDto = z.object({
   lat: z.coerce.number(),
   log: z.coerce.number(),
   eventDate: z.coerce.date(), // convierte string -> Date automáticamente
+  endDate: z.coerce.date(),
   attendees: z.string(),
   userStatus: UserStatusEnum.default("none"),
   categoryId: z.string().uuid(),

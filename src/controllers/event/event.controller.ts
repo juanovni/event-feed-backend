@@ -44,6 +44,9 @@ export const createEvent = async (req: Request, res: Response) => {
     if (eventParsed.data.eventDate.getTime() <= Date.now()) {
       return res.status(400).json({ message: "La fecha y hora del evento deben ser futuras." });
     }
+    if (eventParsed.data.endDate.getTime() <= eventParsed.data.eventDate.getTime()) {
+      return res.status(400).json({ message: "La finalización debe ser posterior al inicio del evento." });
+    }
 
     // 📸 Subir archivo a Cloudinary (si existe)
     let uploadedUrl: string | null = null;

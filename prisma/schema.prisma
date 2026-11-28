@@ -65,6 +65,13 @@ model User {
   categories        Category[]         @relation("UserCategories")
   verificationCodes VerificationCode[]
   accessAssignments EventAccessAssignment[]
+  promoterAssignments EventPromoter[]
+  promoterPayments PromoterPayment[] @relation("PromoterPaymentRecipient")
+  recordedPromoterPayments PromoterPayment[] @relation("PromoterPaymentRecorder")
+  recordedPromoterAdjustments PromoterCommissionAdjustment[] @relation("AdjustmentRecorder")
+  reversedPromoterAdjustments PromoterCommissionAdjustment[] @relation("AdjustmentReverser")
+  organizerSettlementReviews OrganizerSettlementReview[] @relation("SettlementReviewer")
+  organizerSettlementPayments OrganizerSettlementPayment[] @relation("SettlementPayer")
   admissionPasses AdmissionPass[] @relation("PassOwner")
   redeemedPasses AdmissionPass[] @relation("PassRedeemer")
   admissionScans AdmissionScan[]
@@ -105,6 +112,10 @@ model Event {
   lat         Float?
   log         Float?
   eventDate   DateTime
+  endDate     DateTime?
+  settlementDelayDays Int?
+  settlementDelayUpdatedBy String?
+  settlementDelayUpdatedAt DateTime?
   attendees   Int
   userStatus  UserStatus @default(none)
 
@@ -124,6 +135,10 @@ model Event {
   EventAttendance  EventAttendance[]
   eventTicketTypes EventTicketType[]
   accessAssignments EventAccessAssignment[]
+  promoters EventPromoter[]
+  promoterPayments PromoterPayment[]
+  organizerSettlementReviews OrganizerSettlementReview[]
+  organizerSettlementPayments OrganizerSettlementPayment[]
   admissionPasses AdmissionPass[]
   admissionScans AdmissionScan[]
 }
@@ -193,6 +208,74 @@ model SavedEvent {
   @@index([userId, createdAt])
 }
 
+model EventPromoter {
+  id              String   @id @default(uuid())
+  eventId         String
+  userId          String
+  status          String   @default("pending")
+  code            String   @unique
+  commissionType  String?
+  commissionValue Int?
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  attributions    PromoterAttribution[]
+
+  @@index([eventId, userId])
+  @@index([userId, status])
+}
+
+model PromoterPayment {
+  id          String   @id
+  eventId     String
+  promoterId  String
+  recordedById String
+  currency    String
+  amountCents Int
+  paidAt      DateTime
+  reference   String
+  createdAt   DateTime @default(now())
+  event       Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  promoter    User @relation("PromoterPaymentRecipient", fields: [promoterId], references: [id], onDelete: Restrict)
+  recordedBy  User @relation("PromoterPaymentRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([eventId, promoterId, currency])
+}
+
+model OrganizerSettlementReview {
+  id String @id @default(uuid())
+  eventId String
+  currency String
+  reviewerId String
+  amountCents Int
+  snapshotHash String
+  snapshot Json
+  createdAt DateTime @default(now())
+  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  reviewer User @relation("SettlementReviewer", fields: [reviewerId], references: [id], onDelete: Restrict)
+  payment OrganizerSettlementPayment?
+  @@index([eventId, currency, createdAt])
+}
+
+model OrganizerSettlementPayment {
+  id String @id
+  eventId String
+  currency String
+  reviewId String @unique
+  recordedById String
+  amountCents Int
+  paidAt DateTime
+  reference String
+  createdAt DateTime @default(now())
+  event Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  review OrganizerSettlementReview @relation(fields: [reviewId], references: [id], onDelete: Restrict)
+  recordedBy User @relation("SettlementPayer", fields: [recordedById], references: [id], onDelete: Restrict)
+  @@unique([eventId, currency])
+}
+
 model EventAttendance {
   id     String @id @default(uuid())
   user   User   @relation(fields: [userId], references: [id])
@@ -230,6 +313,42 @@ model Ticket {
   TicketItem    TicketItem[]
   payment       PaymentAttempt?
   settlement    TicketSettlement?
+  promoterAttribution PromoterAttribution?
+}
+
+model PromoterAttribution {
+  id                  String        @id @default(uuid())
+  ticketId            String        @unique
+  promoterId          String
+  commissionType      String
+  commissionValue     Int
+  eligibleSubtotalCents Int
+  eligibleQuantity    Int
+  commissionCents     Int
+  createdAt           DateTime      @default(now())
+  ticket              Ticket        @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  promoter            EventPromoter @relation(fields: [promoterId], references: [id], onDelete: Restrict)
+  adjustments         PromoterCommissionAdjustment[]
+
+  @@index([promoterId])
+}
+
+model PromoterCommissionAdjustment {
+  id String @id
+  attributionId String
+  recordedById String
+  type String
+  amountCents Int
+  reference String
+  createdAt DateTime @default(now())
+  reversedAt DateTime?
+  reversedById String?
+  reversalReason String?
+  attribution PromoterAttribution @relation(fields: [attributionId], references: [id], onDelete: Restrict)
+  recordedBy User @relation("AdjustmentRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+  reversedBy User? @relation("AdjustmentReverser", fields: [reversedById], references: [id], onDelete: Restrict)
+
+  @@index([attributionId])
 }
 
 model TicketItem {

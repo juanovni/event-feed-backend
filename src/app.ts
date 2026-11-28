@@ -13,6 +13,7 @@ import paymentRoutes from "./routes/payment/payment.routes";
 import settlementRoutes from "./routes/settlement/settlement.routes";
 import admissionRoutes from "./routes/admission/admission.routes";
 import verificationRoutes from "./routes/verification/verification.routes";
+import promoterRoutes from "./routes/promoter/promoter.routes";
 
 /* import { errorHandler } from "./middlewares/errorHandler"; */
 
@@ -56,6 +57,7 @@ app.use("/api/tickets", ticketRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/settlements", settlementRoutes);
 app.use("/api/admission", admissionRoutes);
+app.use("/api/promoters", promoterRoutes);
 app.use("/api/verification", verificationRoutes);
 
 

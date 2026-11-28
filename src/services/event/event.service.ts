@@ -25,6 +25,7 @@ export const getEvents = async (authUserId: string, isFollowing?: boolean) => {
       lat: true,
       log: true,
       eventDate: true,
+      endDate: true,
       slug: true,
       category: {
         select: {
@@ -202,6 +203,7 @@ export const getEventBySlug = async (slug: string, authUserId?: string) => {
       gallery: true,
       location: true,
       eventDate: true,
+      endDate: true,
       category: {
         select: {
           id: true,
@@ -330,6 +332,7 @@ export const getEventById = async (eventId: string, authUserId?: string) => {
       gallery: true,
       location: true,
       eventDate: true,
+      endDate: true,
       category: {
         select: {
           id: true,
@@ -455,6 +458,7 @@ export const getEventsByUserId = async (userId: string, authUserId?: string) => 
       gallery: true,
       location: true,
       eventDate: true,
+      endDate: true,
       category: {
         select: {
           id: true,
@@ -728,6 +732,7 @@ export const createEvent = async (userId: string, data: CreateEventInput) => {
     lat,
     log,
     eventDate,
+    endDate,
     attendees,
     userStatus,
     categoryId,
@@ -750,6 +755,7 @@ export const createEvent = async (userId: string, data: CreateEventInput) => {
       log,
       slug: slug,
       eventDate: new Date(eventDate),
+      endDate: new Date(endDate),
       userId,
       attendees: +attendees,
       userStatus,

@@ -2,6 +2,7 @@ import { randomUUID } from "crypto";
 import prisma from "../../prisma/client";
 import { z } from "zod";
 import { calculateSettlement, settlementRates } from "../settlement/settlement.service";
+import { calculatePromoterCommission } from "./promoter-commission";
 
 const billingSchema = z.object({
   name: z.string().trim().min(1).max(150),
@@ -73,7 +74,7 @@ export async function quotePayment(items: PurchaseItem[]) {
   return { lines, subtotal, tax, total: subtotal + tax, taxRate: config.taxRate, currency: config.currency };
 }
 
-export async function preparePayment(userId: string, items: PurchaseItem[], expectedTotal?: number, billingData?: unknown, termsAccepted?: unknown) {
+export async function preparePayment(userId: string, items: PurchaseItem[], expectedTotal?: number, billingData?: unknown, termsAccepted?: unknown, promoterCode?: unknown) {
   const config = configuration();
   if (!Array.isArray(items) || items.length === 0 || items.length > 20 ||
       items.some(item => !item || typeof item.eventId !== "string" ||
@@ -85,16 +86,25 @@ export async function preparePayment(userId: string, items: PurchaseItem[], expe
   }
 
   if (termsAccepted !== true) throw new Error("Debes aceptar los términos y condiciones.");
+  if (promoterCode !== undefined && (typeof promoterCode !== "string" || !promoterCode.trim() || promoterCode.trim().length > 64)) throw new Error("Código de promotor inválido.");
   const billing = billingSchema.parse(billingData);
   const rates = await settlementRates();
   const paymentId = randomUUID();
   const purchase = await prisma.$transaction(async tx => {
+    let promoter: { id: string; commissionType: string | null; commissionValue: number | null } | null = null;
+    if (typeof promoterCode === "string") {
+      const locked = await tx.$queryRaw<{ id: string; commissionType: string | null; commissionValue: number | null }[]>`SELECT "id", "commissionType", "commissionValue" FROM "EventPromoter" WHERE "eventId" = ${items[0].eventId} AND "code" = ${promoterCode.trim()} AND "status" = 'accepted' AND "commissionType" IS NOT NULL AND "commissionValue" IS NOT NULL FOR UPDATE`;
+      promoter = locked[0] ?? null;
+      if (!promoter || !["percent", "fixed"].includes(promoter.commissionType!) || !promoter.commissionValue) throw new Error("El código de promotor no está disponible para este evento.");
+    }
     const types = await tx.eventTicketType.findMany({
       where: { id: { in: items.map(item => item.eventTicketTypeId) } },
       include: { event: true },
     });
     if (types.length !== items.length) throw new Error("Una entrada no existe.");
     let subtotal = 0;
+    let eligibleSubtotal = 0;
+    let eligibleQuantity = 0;
     for (const item of [...items].sort((a, b) => a.eventTicketTypeId.localeCompare(b.eventTicketTypeId))) {
       const type = types.find(entry => entry.id === item.eventTicketTypeId);
       if (!type || type.eventId !== item.eventId || type.event.eventDate <= new Date() ||
@@ -107,6 +117,7 @@ export async function preparePayment(userId: string, items: PurchaseItem[], expe
       });
       if (updated.count !== 1) throw new Error("No quedan suficientes entradas.");
       subtotal += Math.round(type.price * 100) * item.quantity;
+      if (type.price > 0) { eligibleSubtotal += Math.round(type.price * 100) * item.quantity; eligibleQuantity += item.quantity; }
     }
     const tax = Math.round(subtotal * config.taxRate);
     if (expectedTotal !== undefined && (!Number.isSafeInteger(expectedTotal) || expectedTotal !== subtotal + tax)) {
@@ -114,6 +125,7 @@ export async function preparePayment(userId: string, items: PurchaseItem[], expe
     }
     const amounts = calculateSettlement(subtotal, tax, rates);
     const organizerId = types[0].event.userId;
+    const commissionCents = promoter ? calculatePromoterCommission(promoter.commissionType!, promoter.commissionValue!, eligibleSubtotal, eligibleQuantity) : 0;
     const ticket = await tx.ticket.create({
       data: {
         userId, billingData: billing, termsVersion: "2026-11-26", termsAcceptedAt: new Date(), subTotal: subtotal / 100, tax: tax / 100, total: (subtotal + tax) / 100,
@@ -125,6 +137,7 @@ export async function preparePayment(userId: string, items: PurchaseItem[], expe
           price: types.find(type => type.id === item.eventTicketTypeId)!.price,
         })) },
         payment: { create: { id: paymentId } },
+        ...(promoter ? { promoterAttribution: { create: { promoterId: promoter.id, commissionType: promoter.commissionType!, commissionValue: promoter.commissionValue!, eligibleSubtotalCents: eligibleSubtotal, eligibleQuantity, commissionCents } } } : {}),
         settlement: { create: {
           organizerId,
           eventId: items[0].eventId,
