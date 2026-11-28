@@ -5,7 +5,17 @@ import { generateAccessToken, generateRefreshToken } from "../../config/jwt";
 import { RegisterDto } from "../../dtos/user/register.dto";
 import { sendVerificationCode } from "../verification/verification.service";
 
+const validatePassword = (password: unknown) => {
+  if (typeof password !== "string" || [...password].length < 15 || Buffer.byteLength(password, "utf8") > 72) {
+    throw new Error("La contraseña debe tener al menos 15 caracteres y no superar 72 bytes.");
+  }
+  if (!/[0-9]/.test(password) || !/\p{Ll}/u.test(password) || !/\p{Lu}/u.test(password)) {
+    throw new Error("La contraseña debe incluir al menos un número, una letra minúscula y una mayúscula.");
+  }
+};
+
 export const preRegisterService = async (email: string, password: string) => {
+  validatePassword(password);
   const existing = await prisma.user.findUnique({ where: { email } });
 
   const hashedPassword = bcryptjs.hashSync(password, 10);
@@ -63,6 +73,8 @@ export const completeRegisterService = async (data: RegisterDto) => {
     gender,
     categories, // array de IDs
   } = data;
+
+  validatePassword(password);
 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (!existing) {

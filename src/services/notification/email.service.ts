@@ -147,7 +147,7 @@ const buildVerificationTemplate = (code: string, userName: string): string => `
           <div class="warning"> ⚠️ Si no solicitaste este código, ignora este correo. Tu cuenta permanece segura. </div>
         </div>
         <div class="footer">
-          <p>Este correo fue enviado automáticamente. Por favor no respondas. <br />© ${new Date().getFullYear()} QueBuenPlan!. Todos los derechos reservados. </p>
+          <p>Este correo fue enviado automáticamente. Por favor no respondas. <br />© ${new Date().getFullYear()} TheNextTicket. Todos los derechos reservados. </p>
         </div>
       </div>
     </div>
@@ -161,7 +161,7 @@ export const sendVerificationEmail = async (
   code: string
 ): Promise<void> => {
   await transporter.sendMail({
-    from: `"QueBuenPlan!" <${process.env.SMTP_USER}>`,
+    from: `"TheNextTicket" <${process.env.SMTP_USER}>`,
     to,
     subject: `${code} es tu código de verificación`,
     html: buildVerificationTemplate(code, userName),
