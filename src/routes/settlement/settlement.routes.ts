@@ -2,7 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import prisma from "../../prisma/client";
 import { authenticate } from "../../middlewares/auth";
-import { listSettlements, recordProcessingFee, settlementRates } from "../../services/settlement/settlement.service";
+import { listSettlements, recordProcessingFee, settlementRates, settlementAvailability } from "../../services/settlement/settlement.service";
 
 const router = Router();
 
@@ -33,6 +33,19 @@ router.put("/admin/config", async (req, res) => {
   const data = { ...parsed.data, updatedBy: String(req.user!.id) };
   await prisma.settlementConfig.upsert({ where: { id: "global" }, create: { id: "global", ...data }, update: data });
   return res.json(parsed.data);
+});
+
+router.get("/admin/events", async (_req, res) => {
+  const events = await prisma.event.findMany({ select: { id: true, title: true, endDate: true, settlementDelayDays: true, user: { select: { name: true, username: true } } }, orderBy: { eventDate: "desc" } });
+  return res.json(events.map(event => ({ ...event, availability: settlementAvailability(event.endDate, event.settlementDelayDays) })));
+});
+
+router.put("/admin/events/:eventId/delay", async (req, res) => {
+  const parsed = z.object({ days: z.number().int().min(0).max(3650) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ message: "Ingresa una cantidad válida de días calendario." });
+  const result = await prisma.event.updateMany({ where: { id: String(req.params.eventId) }, data: { settlementDelayDays: parsed.data.days, settlementDelayUpdatedBy: String(req.user!.id), settlementDelayUpdatedAt: new Date() } });
+  if (!result.count) return res.status(404).json({ message: "Evento no encontrado." });
+  return res.json({ ok: true });
 });
 
 router.get("/admin/summary", async (_req, res) => {

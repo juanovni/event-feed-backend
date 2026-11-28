@@ -32,7 +32,7 @@ function summarize(rows: Array<{ adjustments: { id: string; type: string; amount
 }
 
 async function addPayments(groups: ReturnType<typeof summarize>, where: { eventId?: string; promoterId?: string }) {
-  const payments = await prisma.promoterPayment.findMany({ where, orderBy: { paidAt: "desc" }, select: { id: true, eventId: true, promoterId: true, currency: true, amountCents: true, paidAt: true, reference: true } });
+  const payments = await prisma.promoterPayment.findMany({ where, orderBy: { paidAt: "desc" }, select: { id: true, eventId: true, promoterId: true, currency: true, amountCents: true, paidAt: true, reference: true, recordedBy: { select: { name: true, username: true } } } });
   return groups.map(group => {
     const matching = payments.filter(p => p.eventId === group.eventId && p.promoterId === group.promoterId && p.currency === group.currency);
     const paidCents = matching.reduce((sum, p) => sum + p.amountCents, 0);

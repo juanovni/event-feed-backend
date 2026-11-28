@@ -111,6 +111,9 @@ model Event {
   log         Float?
   eventDate   DateTime
   endDate     DateTime?
+  settlementDelayDays Int?
+  settlementDelayUpdatedBy String?
+  settlementDelayUpdatedAt DateTime?
   attendees   Int
   userStatus  UserStatus @default(none)
 
