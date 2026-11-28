@@ -68,6 +68,8 @@ model User {
   promoterAssignments EventPromoter[]
   promoterPayments PromoterPayment[] @relation("PromoterPaymentRecipient")
   recordedPromoterPayments PromoterPayment[] @relation("PromoterPaymentRecorder")
+  recordedPromoterAdjustments PromoterCommissionAdjustment[] @relation("AdjustmentRecorder")
+  reversedPromoterAdjustments PromoterCommissionAdjustment[] @relation("AdjustmentReverser")
   admissionPasses AdmissionPass[] @relation("PassOwner")
   redeemedPasses AdmissionPass[] @relation("PassRedeemer")
   admissionScans AdmissionScan[]
@@ -288,8 +290,27 @@ model PromoterAttribution {
   createdAt           DateTime      @default(now())
   ticket              Ticket        @relation(fields: [ticketId], references: [id], onDelete: Restrict)
   promoter            EventPromoter @relation(fields: [promoterId], references: [id], onDelete: Restrict)
+  adjustments         PromoterCommissionAdjustment[]
 
   @@index([promoterId])
+}
+
+model PromoterCommissionAdjustment {
+  id String @id
+  attributionId String
+  recordedById String
+  type String
+  amountCents Int
+  reference String
+  createdAt DateTime @default(now())
+  reversedAt DateTime?
+  reversedById String?
+  reversalReason String?
+  attribution PromoterAttribution @relation(fields: [attributionId], references: [id], onDelete: Restrict)
+  recordedBy User @relation("AdjustmentRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+  reversedBy User? @relation("AdjustmentReverser", fields: [reversedById], references: [id], onDelete: Restrict)
+
+  @@index([attributionId])
 }
 
 model TicketItem {

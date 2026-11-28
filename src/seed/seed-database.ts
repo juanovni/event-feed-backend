@@ -5,6 +5,7 @@ async function main() {
   // 1. Borrar registros 
   await prisma.$transaction([
     prisma.promoterPayment.deleteMany(),
+    prisma.promoterCommissionAdjustment.deleteMany(),
     prisma.promoterAttribution.deleteMany(),
     prisma.eventPromoter.deleteMany(),
     prisma.ticketSettlement.deleteMany(),

@@ -13,10 +13,10 @@ const manager = async (userId: string, eventId: string) => {
 const commissionSchema = z.object({ type: z.enum(["percent", "fixed"]), value: z.number().int().positive().max(10000000) }).refine(data => data.type !== "percent" || data.value <= 10000);
 const selectAssignment = { id: true, status: true, code: true, commissionType: true, commissionValue: true, createdAt: true, acceptedAt: true, revokedAt: true, user: { select: { id: true, name: true, email: true } } } as const;
 
-const reportSelect = { commissionCents: true, commissionType: true, commissionValue: true, eligibleSubtotalCents: true, promoter: { select: { userId: true, user: { select: { name: true, username: true } }, event: { select: { id: true, title: true } } } }, ticket: { select: { id: true, itemsInOrder: true, paidAt: true, user: { select: { name: true, username: true } }, settlement: { select: { currency: true } } } } } as const;
+const reportSelect = { adjustments: { select: { id: true, type: true, amountCents: true, reference: true, createdAt: true, reversedAt: true, reversalReason: true, recordedBy: { select: { name: true, username: true } }, reversedBy: { select: { name: true, username: true } } } }, commissionCents: true, commissionType: true, commissionValue: true, eligibleSubtotalCents: true, promoter: { select: { userId: true, user: { select: { name: true, username: true } }, event: { select: { id: true, title: true } } } }, ticket: { select: { id: true, itemsInOrder: true, paidAt: true, user: { select: { name: true, username: true } }, settlement: { select: { currency: true } } } } } as const;
 
-function summarize(rows: Array<{ commissionCents: number; commissionType: string; commissionValue: number; eligibleSubtotalCents: number; promoter: { userId: string; user: { name: string | null; username: string }; event: { id: string; title: string } }; ticket: { id: string; itemsInOrder: number; paidAt: Date | null; user: { name: string | null; username: string }; settlement: { currency: string } | null } }>) {
-  const groups = new Map<string, { promoterId: string; promoterName: string; eventId: string; eventTitle: string; currency: string; tickets: number; salesCents: number; commissionCents: number; purchases: { id: string; buyerName: string; quantity: number; paidAt: Date | null; subtotalCents: number; commissionCents: number; commissionType: string; commissionValue: number }[] }>();
+function summarize(rows: Array<{ adjustments: { id: string; type: string; amountCents: number; reference: string; createdAt: Date; reversedAt: Date | null; reversalReason: string | null; recordedBy: { name: string | null; username: string }; reversedBy: { name: string | null; username: string } | null }[]; commissionCents: number; commissionType: string; commissionValue: number; eligibleSubtotalCents: number; promoter: { userId: string; user: { name: string | null; username: string }; event: { id: string; title: string } }; ticket: { id: string; itemsInOrder: number; paidAt: Date | null; user: { name: string | null; username: string }; settlement: { currency: string } | null } }>) {
+  const groups = new Map<string, { promoterId: string; promoterName: string; eventId: string; eventTitle: string; currency: string; tickets: number; salesCents: number; commissionCents: number; purchases: { id: string; buyerName: string; quantity: number; paidAt: Date | null; subtotalCents: number; commissionCents: number; commissionType: string; commissionValue: number; adjustments: { id: string; type: string; amountCents: number; reference: string; createdAt: Date; reversedAt: Date | null; reversalReason: string | null; recordedBy: { name: string | null; username: string }; reversedBy: { name: string | null; username: string } | null }[] }[] }>();
   for (const row of rows) {
     const currency = row.ticket.settlement?.currency;
     if (!currency) continue;
@@ -25,7 +25,7 @@ function summarize(rows: Array<{ commissionCents: number; commissionType: string
     group.tickets += row.ticket.itemsInOrder;
     group.salesCents += row.eligibleSubtotalCents;
     group.commissionCents += row.commissionCents;
-    group.purchases.push({ id: row.ticket.id, buyerName: row.ticket.user.name || row.ticket.user.username, quantity: row.ticket.itemsInOrder, paidAt: row.ticket.paidAt, subtotalCents: row.eligibleSubtotalCents, commissionCents: row.commissionCents, commissionType: row.commissionType, commissionValue: row.commissionValue });
+    group.purchases.push({ id: row.ticket.id, buyerName: row.ticket.user.name || row.ticket.user.username, quantity: row.ticket.itemsInOrder, paidAt: row.ticket.paidAt, subtotalCents: row.eligibleSubtotalCents, commissionCents: row.commissionCents, commissionType: row.commissionType, commissionValue: row.commissionValue, adjustments: row.adjustments });
     groups.set(key, group);
   }
   return [...groups.values()].sort((a, b) => b.tickets - a.tickets || a.promoterName.localeCompare(b.promoterName));
@@ -36,7 +36,9 @@ async function addPayments(groups: ReturnType<typeof summarize>, where: { eventI
   return groups.map(group => {
     const matching = payments.filter(p => p.eventId === group.eventId && p.promoterId === group.promoterId && p.currency === group.currency);
     const paidCents = matching.reduce((sum, p) => sum + p.amountCents, 0);
-    return { ...group, paidCents, balanceCents: group.commissionCents - paidCents, payments: matching };
+    const adjustmentCents = group.purchases.flatMap(p => p.adjustments).reduce((sum, a) => sum + (a.reversedAt ? 0 : a.amountCents), 0);
+    const netCommissionCents = group.commissionCents - adjustmentCents;
+    return { ...group, adjustmentCents, netCommissionCents, paidCents, balanceCents: Math.max(0, netCommissionCents - paidCents), overpaidCents: Math.max(0, paidCents - netCommissionCents), payments: matching };
   });
 }
 
@@ -64,15 +66,66 @@ router.post("/events/:eventId/payments", async (req, res) => {
       const same = existing.eventId === eventId && existing.promoterId === data.promoterId && existing.currency === data.currency && existing.amountCents === data.amountCents && existing.paidAt.getTime() === new Date(data.paidAt).getTime() && existing.reference === data.reference && existing.recordedById === actor;
       return same ? { ok: true } : { ok: false, message: "Esta solicitud ya se utilizó con otros datos. Actualiza la página antes de registrar otro pago." };
     }
-    const [generated, paid] = await Promise.all([
+    const [generated, paid, adjustments] = await Promise.all([
       tx.promoterAttribution.aggregate({ where: { promoter: { eventId, userId: data.promoterId }, ticket: { isPaid: true, settlement: { currency: data.currency } } }, _sum: { commissionCents: true } }),
       tx.promoterPayment.aggregate({ where: { eventId, promoterId: data.promoterId, currency: data.currency }, _sum: { amountCents: true } }),
+      tx.promoterCommissionAdjustment.aggregate({ where: { reversedAt: null, attribution: { promoter: { eventId, userId: data.promoterId }, ticket: { isPaid: true, settlement: { currency: data.currency } } } }, _sum: { amountCents: true } }),
     ]);
-    if (data.amountCents > (generated._sum.commissionCents ?? 0) - (paid._sum.amountCents ?? 0)) return { ok: false, message: "El importe supera la comisión pendiente. Actualiza el reporte y vuelve a intentarlo." };
+    if (data.amountCents > (generated._sum.commissionCents ?? 0) - (adjustments._sum.amountCents ?? 0) - (paid._sum.amountCents ?? 0)) return { ok: false, message: "El importe supera la comisión pendiente. Actualiza el reporte y vuelve a intentarlo." };
     await tx.promoterPayment.create({ data: { ...data, eventId, recordedById: actor, paidAt: new Date(data.paidAt) } });
     return { ok: true };
   });
   return result.ok ? res.json({ ok: true }) : res.status(409).json({ message: result.message });
+});
+
+router.post("/events/:eventId/adjustments", async (req, res) => {
+  const eventId = String(req.params.eventId), actor = String(req.user!.id);
+  if (!await manager(actor, eventId)) return res.status(403).json({ message: "No autorizado." });
+  const parsed = z.object({ id: z.string().uuid(), ticketId: z.string().uuid(), type: z.enum(["refund", "chargeback"]), amountCents: z.number().int().positive().max(2147483647), reference: z.string().trim().min(1).max(120) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ message: "Revisa el tipo, el importe y la referencia del ajuste." });
+  const data = parsed.data;
+  const attribution = await prisma.promoterAttribution.findFirst({ where: { ticketId: data.ticketId, promoter: { eventId }, ticket: { isPaid: true } }, select: { id: true, commissionCents: true, promoter: { select: { userId: true } }, ticket: { select: { settlement: { select: { currency: true } } } } } });
+  if (!attribution?.ticket.settlement?.currency) return res.status(404).json({ message: "Compra con comisión no encontrada." });
+  const currency = attribution.ticket.settlement.currency;
+  const result = await prisma.$transaction(async tx => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${JSON.stringify([eventId, attribution.promoter.userId, currency])}))`;
+    const existing = await tx.promoterCommissionAdjustment.findUnique({ where: { id: data.id } });
+    if (existing) {
+      const same = existing.attributionId === attribution.id && existing.recordedById === actor && existing.type === data.type && existing.amountCents === data.amountCents && existing.reference === data.reference;
+      return same ? { ok: true } : { ok: false, message: "Esta solicitud ya se utilizó con otros datos." };
+    }
+    const total = await tx.promoterCommissionAdjustment.aggregate({ where: { attributionId: attribution.id, reversedAt: null }, _sum: { amountCents: true } });
+    if (data.amountCents > attribution.commissionCents - (total._sum.amountCents ?? 0)) return { ok: false, message: "El ajuste supera la comisión restante de esta compra." };
+    await tx.promoterCommissionAdjustment.create({ data: { id: data.id, attributionId: attribution.id, recordedById: actor, type: data.type, amountCents: data.amountCents, reference: data.reference } });
+    return { ok: true };
+  });
+  return result.ok ? res.json({ ok: true }) : res.status(409).json({ message: result.message });
+});
+
+router.post("/events/:eventId/adjustments/:adjustmentId/reverse", async (req, res) => {
+  const eventId = String(req.params.eventId), actor = String(req.user!.id), adjustmentId = String(req.params.adjustmentId);
+  if (!await manager(actor, eventId)) return res.status(403).json({ message: "No autorizado." });
+  const parsed = z.object({ reason: z.string().trim().min(1).max(300) }).safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ message: "Indica el motivo de la reversión." });
+  const adjustment = await prisma.promoterCommissionAdjustment.findFirst({
+    where: { id: adjustmentId, attribution: { promoter: { eventId } } },
+    select: { attribution: { select: { promoter: { select: { userId: true } }, ticket: { select: { settlement: { select: { currency: true } } } } } } }
+  });
+  const currency = adjustment?.attribution.ticket.settlement?.currency;
+  if (!adjustment || !currency) return res.status(404).json({ message: "Ajuste no encontrado." });
+  const result = await prisma.$transaction(async tx => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${JSON.stringify([eventId, adjustment.attribution.promoter.userId, currency])}))`;
+    const existing = await tx.promoterCommissionAdjustment.findUnique({ where: { id: adjustmentId } });
+    if (!existing) return { status: 404, message: "Ajuste no encontrado." };
+    if (existing.reversedAt) {
+      return existing.reversedById === actor && existing.reversalReason === parsed.data.reason
+        ? { status: 200, message: "Ajuste revertido." }
+        : { status: 409, message: "Este ajuste ya fue revertido." };
+    }
+    await tx.promoterCommissionAdjustment.update({ where: { id: adjustmentId }, data: { reversedAt: new Date(), reversedById: actor, reversalReason: parsed.data.reason } });
+    return { status: 200, message: "Ajuste revertido." };
+  });
+  return res.status(result.status).json({ message: result.message });
 });
 
 router.get("/assignments", async (req, res) => {
