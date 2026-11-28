@@ -105,6 +105,7 @@ model Event {
   lat         Float?
   log         Float?
   eventDate   DateTime
+  endDate     DateTime?
   attendees   Int
   userStatus  UserStatus @default(none)
 
