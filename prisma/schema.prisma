@@ -58,6 +58,7 @@ model User {
   following         Follow[]           @relation("FollowingRelation")
   followers         Follow[]           @relation("FollowerRelation")
   EventInterest     EventInterest[]
+  savedEvents       SavedEvent[]
   Ticket            Ticket[]
   EventAttendance   EventAttendance[]
   eventImages       EventImage[]
@@ -117,6 +118,7 @@ model Event {
   category         Category          @relation(fields: [categoryId], references: [id])
   categoryId       String
   EventInterest    EventInterest[]
+  savedBy          SavedEvent[]
   TicketItem       TicketItem[]
   EventImage       EventImage[]
   EventAttendance  EventAttendance[]
@@ -177,6 +179,18 @@ model EventInterest {
   createdAt DateTime @default(now())
 
   @@unique([userId, eventId]) // 👈 evita duplicados
+}
+
+model SavedEvent {
+  id        String   @id @default(uuid())
+  userId    String
+  eventId   String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId, createdAt])
 }
 
 model EventAttendance {
