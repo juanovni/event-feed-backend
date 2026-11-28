@@ -65,6 +65,7 @@ model User {
   categories        Category[]         @relation("UserCategories")
   verificationCodes VerificationCode[]
   accessAssignments EventAccessAssignment[]
+  promoterAssignments EventPromoter[]
   admissionPasses AdmissionPass[] @relation("PassOwner")
   redeemedPasses AdmissionPass[] @relation("PassRedeemer")
   admissionScans AdmissionScan[]
@@ -125,6 +126,7 @@ model Event {
   EventAttendance  EventAttendance[]
   eventTicketTypes EventTicketType[]
   accessAssignments EventAccessAssignment[]
+  promoters EventPromoter[]
   admissionPasses AdmissionPass[]
   admissionScans AdmissionScan[]
 }
@@ -194,6 +196,26 @@ model SavedEvent {
   @@index([userId, createdAt])
 }
 
+model EventPromoter {
+  id              String   @id @default(uuid())
+  eventId         String
+  userId          String
+  status          String   @default("pending")
+  code            String   @unique
+  commissionType  String?
+  commissionValue Int?
+  acceptedAt      DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  event           Event    @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  attributions    PromoterAttribution[]
+
+  @@index([eventId, userId])
+  @@index([userId, status])
+}
+
 model EventAttendance {
   id     String @id @default(uuid())
   user   User   @relation(fields: [userId], references: [id])
@@ -231,6 +253,23 @@ model Ticket {
   TicketItem    TicketItem[]
   payment       PaymentAttempt?
   settlement    TicketSettlement?
+  promoterAttribution PromoterAttribution?
+}
+
+model PromoterAttribution {
+  id                  String        @id @default(uuid())
+  ticketId            String        @unique
+  promoterId          String
+  commissionType      String
+  commissionValue     Int
+  eligibleSubtotalCents Int
+  eligibleQuantity    Int
+  commissionCents     Int
+  createdAt           DateTime      @default(now())
+  ticket              Ticket        @relation(fields: [ticketId], references: [id], onDelete: Restrict)
+  promoter            EventPromoter @relation(fields: [promoterId], references: [id], onDelete: Restrict)
+
+  @@index([promoterId])
 }
 
 model TicketItem {
