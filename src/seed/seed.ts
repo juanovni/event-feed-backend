@@ -96,10 +96,10 @@ export const initialData: SeedData = {
   users: [
     {
       "name": "Administrador QBP",
-      "email": "admin.quebuenplanec@gmail.com",
+      "email": "admin.thenextticket@gmail.com",
       "description": "",
       "password": bcryptjs.hashSync('A@!229!QBP'),
-      "username": "juanConstantine",
+      "username": "Admin",
       "avatar": "https://i.pravatar.cc/150?img=1",
       "role": "admin",
       "isVerified": true
