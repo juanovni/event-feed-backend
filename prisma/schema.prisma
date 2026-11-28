@@ -66,6 +66,8 @@ model User {
   verificationCodes VerificationCode[]
   accessAssignments EventAccessAssignment[]
   promoterAssignments EventPromoter[]
+  promoterPayments PromoterPayment[] @relation("PromoterPaymentRecipient")
+  recordedPromoterPayments PromoterPayment[] @relation("PromoterPaymentRecorder")
   admissionPasses AdmissionPass[] @relation("PassOwner")
   redeemedPasses AdmissionPass[] @relation("PassRedeemer")
   admissionScans AdmissionScan[]
@@ -127,6 +129,7 @@ model Event {
   eventTicketTypes EventTicketType[]
   accessAssignments EventAccessAssignment[]
   promoters EventPromoter[]
+  promoterPayments PromoterPayment[]
   admissionPasses AdmissionPass[]
   admissionScans AdmissionScan[]
 }
@@ -214,6 +217,23 @@ model EventPromoter {
 
   @@index([eventId, userId])
   @@index([userId, status])
+}
+
+model PromoterPayment {
+  id          String   @id
+  eventId     String
+  promoterId  String
+  recordedById String
+  currency    String
+  amountCents Int
+  paidAt      DateTime
+  reference   String
+  createdAt   DateTime @default(now())
+  event       Event @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  promoter    User @relation("PromoterPaymentRecipient", fields: [promoterId], references: [id], onDelete: Restrict)
+  recordedBy  User @relation("PromoterPaymentRecorder", fields: [recordedById], references: [id], onDelete: Restrict)
+
+  @@index([eventId, promoterId, currency])
 }
 
 model EventAttendance {
